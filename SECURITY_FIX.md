@@ -4,7 +4,7 @@
 
 ### 1. 硬编码API密钥
 在多个文件中发现了硬编码的DashScope API密钥：
-- `sk-b70842d25c884aa9aa18955b00c24d37`
+- `<YOUR_DASHSCOPE_API_KEY>`
 
 ### 2. 重复环境变量配置
 在 `~/.zshrc` 中有3行重复的API密钥配置
@@ -24,7 +24,7 @@ nano ~/.zshrc
 **修改内容**：
 ```bash
 # 删除重复的行，只保留一行
-export DASHSCOPE_API_KEY="sk-b70842d25c884aa9aa18955b00c24d37"
+export DASHSCOPE_API_KEY="<YOUR_DASHSCOPE_API_KEY>"
 ```
 
 ### 步骤2: 移除硬编码密钥
@@ -34,7 +34,7 @@ export DASHSCOPE_API_KEY="sk-b70842d25c884aa9aa18955b00c24d37"
 #### 1. rag-searx/demos/simple_video_rag_demo.py
 ```python
 # 替换
-os.environ['DASHSCOPE_API_KEY'] = 'sk-b70842d25c884aa9aa18955b00c24d37'
+os.environ['DASHSCOPE_API_KEY'] = '<YOUR_DASHSCOPE_API_KEY>'
 
 # 为
 api_key = os.getenv('DASHSCOPE_API_KEY')
@@ -46,7 +46,7 @@ os.environ['DASHSCOPE_API_KEY'] = api_key
 #### 2. rag-searx/ragflow_integration/enhanced_video_rag_pipeline.py
 ```python
 # 替换
-os.environ['DASHSCOPE_API_KEY'] = 'sk-b70842d25c884aa9aa18955b00c24d37'
+os.environ['DASHSCOPE_API_KEY'] = '<YOUR_DASHSCOPE_API_KEY>'
 
 # 为
 api_key = os.getenv('DASHSCOPE_API_KEY')
@@ -58,7 +58,7 @@ os.environ['DASHSCOPE_API_KEY'] = api_key
 #### 3. rag-searx/ragflow_integration/video_rag_pipeline.py
 ```python
 # 替换
-os.environ['DASHSCOPE_API_KEY'] = 'sk-b70842d25c884aa9aa18955b00c24d37'
+os.environ['DASHSCOPE_API_KEY'] = '<YOUR_DASHSCOPE_API_KEY>'
 
 # 为
 api_key = os.getenv('DASHSCOPE_API_KEY')
@@ -70,7 +70,7 @@ os.environ['DASHSCOPE_API_KEY'] = api_key
 #### 4. AI-score/configs/llm_config.py
 ```python
 # 替换
-'api_key': 'sk-b70842d25c884aa9aa18955b00c24d37',
+'api_key': '<YOUR_DASHSCOPE_API_KEY>',
 
 # 为
 'api_key': os.getenv('DASHSCOPE_API_KEY'),
@@ -82,7 +82,7 @@ os.environ['DASHSCOPE_API_KEY'] = api_key
 #### 6. AI-安主任/configs/config.py
 ```python
 # 替换
-API_KEY = "sk-b70842d25c884aa9aa18955b00c24d37"
+API_KEY = "<YOUR_DASHSCOPE_API_KEY>"
 
 # 为
 API_KEY = os.getenv('DASHSCOPE_API_KEY')
