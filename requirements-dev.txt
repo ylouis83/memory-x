@@ -17,3 +17,6 @@ numpy>=1.24.0
 
 # 自然语言处理
 jieba>=0.42.0
+
+# DashScope集成
+dashscope>=1.14.1
