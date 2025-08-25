@@ -201,8 +201,8 @@ MEMORY_DB_TYPE=sqlite  # sqlite, mysql, postgresql
 MEMORY_DB_PATH=./memory_db/memory.db
 MEMORY_DB_HOST=localhost
 MEMORY_DB_PORT=3306
-MEMORY_DB_USER=memory_user
-MEMORY_DB_PASSWORD=memory_pass
+MEMORY_DB_USER=your_db_user
+MEMORY_DB_PASSWORD=your_db_password
 
 # 服务配置
 MEMORY_SERVICE_HOST=0.0.0.0
