@@ -137,6 +137,16 @@ data/
 uploads/
 *.log
 
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.development
+config.ini
+secrets.json
+*.key
+*.pem
+
 # IDE
 .vscode/
 .idea/

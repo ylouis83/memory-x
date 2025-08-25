@@ -16,7 +16,14 @@ from loguru import logger
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from configs.settings import get_config
-from src.core.memory_manager import MemoryManager, SimpleMemoryIntegratedAI
+from src.core.memory_manager import SimpleMemoryManager, SimpleMemoryIntegratedAI
+
+# 导入DashScope路由
+try:
+    from src.api.dashscope_routes import dashscope_bp
+    DASHSCOPE_AVAILABLE = True
+except ImportError:
+    DASHSCOPE_AVAILABLE = False
 
 
 def create_app(config_name: str = None):
@@ -239,6 +246,13 @@ def create_app(config_name: str = None):
         except Exception as e:
             logger.error(f"Error in advanced query: {e}")
             return jsonify({'error': str(e)}), 500
+    
+    # 注册DashScope路由
+    if DASHSCOPE_AVAILABLE:
+        app.register_blueprint(dashscope_bp)
+        logger.info("DashScope API路由已注册")
+    else:
+        logger.warning("DashScope API路由未注册，请检查依赖")
     
     @app.errorhandler(404)
     def not_found(error):
