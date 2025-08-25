@@ -9,7 +9,10 @@ from datetime import datetime, timedelta
 # 创建SQLite双时态数据库
 def create_spanner_db():
     db_path = 'memory_db/spanner_memory.db'
-    
+    # Ensure the database directory exists to avoid runtime errors when the
+    # tests attempt to initialise the SQLite database.
+    os.makedirs(os.path.dirname(db_path), exist_ok=True)
+
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
@@ -64,6 +67,19 @@ def create_spanner_db():
               AND tombstone = 0
               AND id <> new.id;
         END
+    ''')
+
+    # Optional change log table to record operations. The tests query this
+    # table even if no changes are logged, so ensure it exists to avoid
+    # OperationalError.
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS change_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            table_name TEXT,
+            op TEXT,
+            keys TEXT,
+            commit_ts DATETIME DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+        )
     ''')
     
     conn.commit()

@@ -12,7 +12,7 @@ import os
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from src.core.memory_manager import MemoryManager, SimpleMemoryIntegratedAI
+from src.core.memory_manager import SimpleMemoryManager, SimpleMemoryIntegratedAI
 
 
 def basic_memory_example():
@@ -21,7 +21,7 @@ def basic_memory_example():
     print("=" * 50)
     
     # 创建记忆管理器
-    memory_manager = MemoryManager(user_id="user_001")
+    memory_manager = SimpleMemoryManager(user_id="user_001")
     
     # 示例1: 添加用户基本信息
     print("\n📝 示例1: 添加用户基本信息")
@@ -55,13 +55,13 @@ def basic_memory_example():
     print("\n📝 示例3: 查询记忆")
     print("-" * 30)
     
-    # 查询用户名字
-    memories = memory_manager.get_relevant_memories("张三")
-    print(f"关于'张三'的记忆: {len(memories)} 条")
+    # 查询短期记忆
+    short_term_count = len(memory_manager.short_term_memory)
+    print(f"短期记忆数量: {short_term_count} 条")
     
-    # 查询过敏信息
-    memories = memory_manager.get_relevant_memories("青霉素")
-    print(f"关于'青霉素'的记忆: {len(memories)} 条")
+    # 查询工作记忆
+    working_memory_size = len(memory_manager.working_memory)
+    print(f"工作记忆大小: {working_memory_size}")
     
     # 示例4: 获取记忆统计
     print("\n📝 示例4: 获取记忆统计")
@@ -122,7 +122,7 @@ def memory_operations_example():
     print("\n🔧 Memory-X 记忆操作示例")
     print("=" * 50)
     
-    memory_manager = MemoryManager(user_id="user_003")
+    memory_manager = SimpleMemoryManager(user_id="user_003")
     
     # 添加不同类型的记忆
     print("\n📝 添加不同类型的记忆")
