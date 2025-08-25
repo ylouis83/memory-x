@@ -193,18 +193,28 @@ class BusinessTestSuite:
             for i, message in enumerate(test_messages, 1):
                 print(f"  对话 {i}: {message}")
                 result = memory_manager.process_message(message)
-                
+
                 if not result['success']:
                     print(f"❌ 对话 {i} 处理失败: {result.get('error', '未知错误')}")
                     return False
-                
+
                 print(f"    AI回复: {result['response'][:50]}...")
                 print(f"    意图: {result['intent']}")
                 print(f"    重要性: {result['importance']}")
-            
+
             # 检查短期记忆
             assert len(memory_manager.short_term_memory) == 3
-            
+
+            # 展示记忆召回效果
+            recall = memory_manager.search_memories("过敏", top_k=1)
+            if recall:
+                mem = recall[0]
+                print(
+                    f"    🔁 记忆召回: {mem['user_message']} (相似度: {mem['similarity']:.3f})"
+                )
+            else:
+                print("    ⚠️ 未找到关于过敏的记忆")
+
             print("✅ 基础对话流程测试通过")
             return True
             
@@ -259,14 +269,55 @@ class BusinessTestSuite:
             
             # 验证重要医疗信息是否被记住
             assert len(memory_manager.short_term_memory) == 6
-            
+
             print("✅ 医疗场景测试通过")
             return True
-            
+
         except Exception as e:
             print(f"❌ 医疗场景测试失败: {e}")
             return False
-    
+
+    def test_ecommerce_scenario(self) -> bool:
+        """测试电子商务场景，验证用户偏好记忆与召回"""
+        try:
+            from src.core.dashscope_memory_manager import DashScopeMemoryManager
+
+            memory_manager = DashScopeMemoryManager("shop_user_001")
+
+            shopping_conversation = [
+                "我喜欢华为手机",
+                "预算在3000元左右",
+                "推荐一款手机给我"
+            ]
+
+            print("🛒 开始电子商务场景测试...")
+
+            for i, message in enumerate(shopping_conversation, 1):
+                print(f"  购物对话 {i}: {message}")
+                result = memory_manager.process_message(message)
+
+                if not result['success']:
+                    print(f"❌ 购物对话 {i} 处理失败")
+                    return False
+
+                print(f"    AI回复: {result['response'][:50]}...")
+
+            # 展示对用户偏好和预算的记忆
+            recall = memory_manager.search_memories("手机", top_k=5)
+            if recall:
+                print(f"  🔁 召回相关记忆 {len(recall)} 条:")
+                for m in recall:
+                    print(f"    - {m['user_message']} (相似度: {m['similarity']:.3f})")
+            else:
+                print("  ⚠️ 未召回用户偏好记忆")
+
+            print("✅ 电子商务场景测试通过")
+            return True
+
+        except Exception as e:
+            print(f"❌ 电子商务场景测试失败: {e}")
+            return False
+
     def test_memory_search_functionality(self) -> bool:
         """测试记忆搜索功能"""
         try:
@@ -587,6 +638,7 @@ class BusinessTestSuite:
             ("记忆管理器创建", self.test_memory_manager_creation),
             ("基础对话流程", self.test_basic_conversation_flow),
             ("医疗场景测试", self.test_medical_scenario),
+            ("电子商务场景", self.test_ecommerce_scenario),
             ("记忆搜索功能", self.test_memory_search_functionality),
             ("API端点测试", self.test_api_endpoints),
             ("数据库操作", self.test_database_operations),
