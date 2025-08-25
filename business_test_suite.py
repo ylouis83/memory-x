@@ -193,7 +193,6 @@ class BusinessTestSuite:
             for i, message in enumerate(test_messages, 1):
                 print(f"  对话 {i}: {message}")
                 result = memory_manager.process_message(message)
-
                 if not result['success']:
                     print(f"❌ 对话 {i} 处理失败: {result.get('error', '未知错误')}")
                     return False
@@ -214,7 +213,6 @@ class BusinessTestSuite:
                 )
             else:
                 print("    ⚠️ 未找到关于过敏的记忆")
-
             print("✅ 基础对话流程测试通过")
             return True
             
@@ -226,9 +224,9 @@ class BusinessTestSuite:
         """测试医疗场景"""
         try:
             from src.core.dashscope_memory_manager import DashScopeMemoryManager
-            
+
             memory_manager = DashScopeMemoryManager("medical_user_001")
-            
+
             # 模拟医疗咨询场景
             medical_conversation = [
                 "医生，我叫李四，今年45岁",
@@ -238,35 +236,35 @@ class BusinessTestSuite:
                 "我的血压控制得怎么样？",
                 "我想了解一下我的过敏史"
             ]
-            
+
             print("🏥 开始医疗场景测试...")
-            
+
             for i, message in enumerate(medical_conversation, 1):
                 print(f"  医疗对话 {i}: {message}")
                 result = memory_manager.process_message(message)
-                
+
                 if not result['success']:
                     print(f"❌ 医疗对话 {i} 处理失败")
                     return False
-                
+
                 # 检查AI回复的医疗专业性
                 response = result['response']
                 if any(keyword in response.lower() for keyword in ['建议', '注意', '就医', '药物', '血压']):
                     print(f"    ✅ AI回复专业: {response[:50]}...")
                 else:
                     print(f"    ⚠️ AI回复可能不够专业: {response[:50]}...")
-                
+
                 print(f"    意图: {result['intent']}")
                 print(f"    重要性: {result['importance']}")
-                
+
                 # 检查实体识别
                 if result['entities']:
                     print(f"    实体: {result['entities']}")
-            
+
             # 检查工作记忆中的医疗信息
             working_memory = memory_manager.working_memory
             print(f"  工作记忆: {working_memory}")
-            
+
             # 验证重要医疗信息是否被记住
             assert len(memory_manager.short_term_memory) == 6
 
@@ -317,7 +315,6 @@ class BusinessTestSuite:
         except Exception as e:
             print(f"❌ 电子商务场景测试失败: {e}")
             return False
-
     def test_memory_search_functionality(self) -> bool:
         """测试记忆搜索功能"""
         try:
