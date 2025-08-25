@@ -1,0 +1,78 @@
+{
+  "timestamp": "2025-08-25T14:20:40.626828",
+  "total_tests": 11,
+  "passed": 10,
+  "failed": 1,
+  "error": 0,
+  "skipped": 0,
+  "success_rate": 90.9090909090909,
+  "total_time": 194.2533631324768,
+  "results": [
+    {
+      "name": "环境配置检查",
+      "status": "✅ 通过",
+      "duration": 0.07948803901672363,
+      "message": "测试通过"
+    },
+    {
+      "name": "DashScope API连接",
+      "status": "✅ 通过",
+      "duration": 0.7900309562683105,
+      "message": "测试通过"
+    },
+    {
+      "name": "记忆管理器创建",
+      "status": "✅ 通过",
+      "duration": 0.009899139404296875,
+      "message": "测试通过"
+    },
+    {
+      "name": "基础对话流程",
+      "status": "✅ 通过",
+      "duration": 13.30113673210144,
+      "message": "测试通过"
+    },
+    {
+      "name": "医疗场景测试",
+      "status": "✅ 通过",
+      "duration": 53.90251708030701,
+      "message": "测试通过"
+    },
+    {
+      "name": "记忆搜索功能",
+      "status": "✅ 通过",
+      "duration": 96.71566486358643,
+      "message": "测试通过"
+    },
+    {
+      "name": "API端点测试",
+      "status": "❌ 失败",
+      "duration": 0.002599000930786133,
+      "message": "测试失败"
+    },
+    {
+      "name": "数据库操作",
+      "status": "✅ 通过",
+      "duration": 7.5448079109191895,
+      "message": "测试通过"
+    },
+    {
+      "name": "性能指标",
+      "status": "✅ 通过",
+      "duration": 3.786142110824585,
+      "message": "测试通过"
+    },
+    {
+      "name": "错误处理",
+      "status": "✅ 通过",
+      "duration": 6.194353818893433,
+      "message": "测试通过"
+    },
+    {
+      "name": "数据持久化",
+      "status": "✅ 通过",
+      "duration": 11.92599105834961,
+      "message": "测试通过"
+    }
+  ]
+}
