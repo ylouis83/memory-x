@@ -38,7 +38,6 @@ class SQLiteMemoryStore(MemoryStore):
             )
             """
         )
-        # Ensure the embedding column exists for legacy databases
         cursor.execute("PRAGMA table_info(memories)")
         cols = [row[1] for row in cursor.fetchall()]
         if "embedding" not in cols:
@@ -55,25 +54,31 @@ class SQLiteMemoryStore(MemoryStore):
         intent: Optional[str] = None,
         importance: int = 1,
     ) -> None:
+        now = datetime.now().isoformat()
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        embedding = json.dumps(self._embed(user_message))
-        cursor.execute(
+        records = []
+        for content, mtype in ((user_message, "user"), (ai_response, "ai")):
+            embedding = json.dumps(self._embed(content))
+            records.append(
+                (
+                    user_id,
+                    content,
+                    mtype,
+                    importance,
+                    json.dumps(entities),
+                    intent,
+                    now,
+                    embedding,
+                )
+            )
+        cursor.executemany(
             """
             INSERT INTO memories
             (user_id, content, message_type, importance, entities, intent, timestamp, embedding)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (
-                user_id,
-                user_message,
-                "user",
-                importance,
-                json.dumps(entities),
-                intent,
-                datetime.now().isoformat(),
-                embedding,
-            ),
+            records,
         )
         conn.commit()
         conn.close()

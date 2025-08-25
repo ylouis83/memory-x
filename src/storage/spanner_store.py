@@ -68,7 +68,16 @@ class SpannerMemoryStore(MemoryStore):
                         str(entities),
                         intent,
                         "CURRENT_TIMESTAMP",
-                    )
+                    ),
+                    (
+                        user_id,
+                        ai_response,
+                        "ai",
+                        importance,
+                        str(entities),
+                        intent,
+                        "CURRENT_TIMESTAMP",
+                    ),
                 ],
             )
 
@@ -96,14 +105,13 @@ class SpannerMemoryStore(MemoryStore):
         """
         if self.client is None:
             return []
-        # Example placeholder query; not executed in tests
-        del query, top_k
         with self.database.snapshot() as snapshot:
             result = snapshot.execute_sql(
-                "SELECT content FROM memories WHERE user_id=@uid LIMIT @k",
-                params={"uid": user_id, "k": top_k},
+                "SELECT content FROM memories WHERE user_id=@uid AND content LIKE @q LIMIT @k",
+                params={"uid": user_id, "q": f"%{query}%", "k": top_k},
                 param_types={
                     "uid": spanner.param_types.STRING,
+                    "q": spanner.param_types.STRING,
                     "k": spanner.param_types.INT64,
                 },
             )

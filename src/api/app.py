@@ -16,7 +16,7 @@ from loguru import logger
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from configs.settings import get_config
-from src.core.memory_manager import MemoryManager, SimpleMemoryIntegratedAI
+from src.core.memory_manager import SimpleMemoryManager, SimpleMemoryIntegratedAI
 
 
 def create_app(config_name: str = None):
