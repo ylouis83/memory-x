@@ -1,41 +1,42 @@
 # Memory-X | 智能记忆管理系统
 
-Memory-X 是一个用于对话式 AI 的记忆管理库，提供多层次记忆、内容检索以及可插拔的存储后端。默认使用 SQLite，本项目还提供一个遵循 Google Vertex AI Memory 设计的 Cloud Spanner 适配层，便于迁移到分布式、全球可用的存储。
+Memory-X 是一个参考 Google Vertex AI Memory Bank 设计的 Python 记忆管理系统。它提供统一的 `MemoryManager` 与可插拔的 `MemoryStore`，默认使用轻量级的 `SQLiteMemoryStore`，并预留 `SpannerMemoryStore` 以便未来接入 Cloud Spanner 等云数据库，实现全球分布式记忆存储。
 
 ## ✨ 特性
+- 层次化记忆：短期、工作和长期记忆分层管理
+- 向量相似检索：`search_memories` 通过余弦相似度召回相关记忆
+- 可插拔存储后端：`SQLiteMemoryStore` 开箱即用，`SpannerMemoryStore` 便于扩展
+- RESTful API：基于 Flask，可选 DashScope 集成
+- 易于配置：支持环境变量或配置文件
+- 完善测试覆盖：单元测试与业务级场景测试
 
-- **层次化记忆**：短期、工作、长期记忆分层管理，支持上下文延续。
-- **内容检索**：`search_memories` API 支持向量相似度搜索，召回相关记忆。
-- **可插拔存储**：通过 `MemoryStore` 抽象，可选择 SQLite、Spanner 等后端。
-- **RESTful API**：基于 Flask，提供简单的 HTTP 接口，支持 DashScope 可选集成。
-- **易于配置**：支持环境变量和配置文件。
-- **完善测试**：包含单元测试、业务级场景测试。
-
-## 🚀 快速开始
-
-1. 克隆仓库并安装依赖
-
+## 📦 安装
 ```bash
+# 克隆项目并进入目录
 git clone https://github.com/ylouis/memory-x.git
 cd memory-x
+
+# 创建并激活虚拟环境
+python -m venv venv
+source venv/bin/activate  # Windows 使用 venv\\Scripts\\activate
+
+# 安装依赖
 pip install -r requirements.txt
 ```
 
-2. 初始化数据库并运行示例
+## 🚀 快速开始
+```python
+from src.core.memory_manager import MemoryManager
 
-```bash
-python src/core/init_database.py
-python examples/basic_usage.py
-```
-
-3. 启动 API 服务
-
-```bash
-python src/api/app.py
+mm = MemoryManager(user_id="user_001")
+mm.add_conversation(
+    user_message="我叫张三",
+    ai_response="你好张三，很高兴认识你！",
+)
+print(mm.search_memories("张三"))
 ```
 
 ## 🗄️ 存储后端
-
 Memory-X 使用 `MemoryStore` 接口实现可插拔存储。
 
 | 后端 | 说明 |
@@ -44,27 +45,30 @@ Memory-X 使用 `MemoryStore` 接口实现可插拔存储。
 | `SpannerMemoryStore` | Cloud Spanner 适配层（示例/stub），参考 Vertex AI 的全局分布式记忆设计。 |
 
 切换后端只需在配置中指定 `MEMORY_DB_TYPE`：
-
 ```bash
 export MEMORY_DB_TYPE=sqlite   # 或 spanner
 ```
 
-## 📚 进一步阅读
-
-- `docs/SECURITY_FIX.md` 安全配置说明
-- `docs/dashscope_integration.md` DashScope 集成指南
+## ⚙️ 配置
+所有敏感信息通过环境变量提供：
+```bash
+MEMORY_DB_TYPE=sqlite        # 或 spanner
+MEMORY_DB_PATH=./memory.db   # SQLite 时有效
+MEMORY_DB_USER=your_user     # Cloud Spanner 时使用
+MEMORY_DB_PASSWORD=your_password
+```
 
 ## 🧪 测试
-
 ```bash
 pytest -q
 ```
 
-## 🤝 贡献
+## 📚 文档
+更多设计细节、API 说明和业务测试示例请见 [docs/](docs) 与 [examples/](examples)。
 
+## 🤝 贡献
 欢迎提交 Issue 或 PR。代码风格遵循 PEP 8，并请附带单元测试。
 
 ## 📄 许可证
-
-本项目采用 MIT 许可证，详见 [LICENSE](LICENSE)。
+项目采用 [MIT License](LICENSE)。
 
