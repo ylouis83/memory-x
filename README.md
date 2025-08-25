@@ -16,6 +16,9 @@
 - **模块化设计**：清晰的模块分离，易于扩展和维护
 - **RESTful API**：提供完整的HTTP API接口
 - **多数据库支持**：支持SQLite、MySQL等多种数据库
+- **可插拔存储后端**：新增Cloud Spanner适配器，可扩展至Vertex AI风格的全球记忆存储
+- **内容检索接口**：提供`search_memories`API，用于基于内容的长期记忆检索
+- **向量相似检索**：内置简易嵌入和相似度计算，支持基于内容的记忆召回
 - **配置化管理**：灵活的配置系统，支持环境变量
 - **完整测试覆盖**：包含单元测试和集成测试
 - **详细文档**：提供完整的使用文档和API文档
@@ -201,8 +204,8 @@ MEMORY_DB_TYPE=sqlite  # sqlite, mysql, postgresql
 MEMORY_DB_PATH=./memory_db/memory.db
 MEMORY_DB_HOST=localhost
 MEMORY_DB_PORT=3306
-MEMORY_DB_USER=memory_user
-MEMORY_DB_PASSWORD=memory_pass
+MEMORY_DB_USER=your_db_user
+MEMORY_DB_PASSWORD=your_db_password
 
 # 服务配置
 MEMORY_SERVICE_HOST=0.0.0.0
