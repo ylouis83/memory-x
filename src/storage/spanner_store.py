@@ -8,7 +8,7 @@ placeholders so tests can run without Cloud Spanner access.
 
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 try:  # pragma: no cover - optional dependency
     from google.cloud import spanner  # type: ignore
@@ -68,7 +68,16 @@ class SpannerMemoryStore(MemoryStore):
                         str(entities),
                         intent,
                         "CURRENT_TIMESTAMP",
-                    )
+                    ),
+                    (
+                        user_id,
+                        ai_response,
+                        "ai",
+                        importance,
+                        str(entities),
+                        intent,
+                        "CURRENT_TIMESTAMP",
+                    ),
                 ],
             )
 
@@ -84,3 +93,37 @@ class SpannerMemoryStore(MemoryStore):
             )
             row = list(result)[0]
             return {"total_long_term": row[0]}
+
+    def search_memories(
+        self, user_id: str, query: str, limit: int = 5
+    ) -> List[Dict]:  # pragma: no cover - illustrative
+        if self.client is None:
+            return []
+        with self.database.snapshot() as snapshot:
+            result = snapshot.execute_sql(
+                """
+                SELECT content, message_type, importance, entities, intent, timestamp
+                FROM memories
+                WHERE user_id=@uid AND content LIKE @q
+                ORDER BY timestamp DESC
+                LIMIT @lim
+                """,
+                params={"uid": user_id, "q": f"%{query}%", "lim": limit},
+                param_types={
+                    "uid": spanner.param_types.STRING,
+                    "q": spanner.param_types.STRING,
+                    "lim": spanner.param_types.INT64,
+                },
+            )
+            rows = list(result)
+            return [
+                {
+                    "content": r[0],
+                    "message_type": r[1],
+                    "importance": r[2],
+                    "entities": r[3],
+                    "intent": r[4],
+                    "timestamp": r[5],
+                }
+                for r in rows
+            ]

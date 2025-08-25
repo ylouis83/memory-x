@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 
 class MemoryStore:
     """Interface for persistent memory storage backends.
 
-    A store only needs to implement two operations for the current
-    simplified agent memory:
-
-    * ``add_conversation`` – persist a single conversation turn
-    * ``get_stats`` – return aggregated statistics for a user
+    The interface models the capabilities of Vertex AI's Memory Bank and
+    exposes a minimal set of operations used by the agent.  In addition to
+    persisting conversations and returning statistics, stores may provide
+    lightweight content search to retrieve relevant context for a query.
     """
 
     def add_conversation(
@@ -27,4 +26,14 @@ class MemoryStore:
         raise NotImplementedError
 
     def get_stats(self, user_id: str) -> Dict:
+        raise NotImplementedError
+
+    def search_memories(
+        self, user_id: str, query: str, limit: int = 5
+    ) -> List[Dict]:
+        """Return memories matching ``query`` for ``user_id``.
+
+        Implementations can use simple keyword search or more advanced
+        semantic retrieval.  Results are ordered by relevance or recency.
+        """
         raise NotImplementedError

@@ -94,6 +94,10 @@ class SimpleMemoryManager:
             "total_long_term": stats.get("total_long_term", 0),
             "session_id": f"session_{datetime.now().strftime('%Y%m%d')}",
         }
+
+    def search_long_term_memory(self, query: str, limit: int = 5) -> List[Dict]:
+        """在长期记忆中搜索相关内容"""
+        return self.store.search_memories(self.user_id, query, limit)
     
     def clear_session(self):
         """清空会话"""
@@ -126,12 +130,19 @@ class SimpleMemoryIntegratedAI:
             # 评估重要性
             importance = self._evaluate_importance(intent, entities)
             
+            # 在长期记忆中检索相关内容
+            retrieved = memory_manager.search_long_term_memory(user_message)
+
             # 生成回复
             ai_response = self._generate_response(user_message, intent, entities)
-            
+            if retrieved:
+                ai_response = f"我记得你提到过：{retrieved[0]['content']}。" + ai_response
+
             # 存储对话
-            memory_manager.add_conversation(user_message, ai_response, entities, intent, importance)
-            
+            memory_manager.add_conversation(
+                user_message, ai_response, entities, intent, importance
+            )
+
             return {
                 'success': True,
                 'response': ai_response,
@@ -139,7 +150,8 @@ class SimpleMemoryIntegratedAI:
                 'memory_info': {
                     'importance': importance,
                     'used_long_term': importance >= 3,
-                    'context_continuity': 0.7
+                    'context_continuity': 0.7,
+                    'retrieved': len(retrieved),
                 }
             }
         except Exception as e:
