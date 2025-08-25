@@ -1,0 +1,60 @@
+# Web框架
+Flask==2.3.3
+Flask-CORS==4.0.0
+Flask-RESTful==0.3.10
+Werkzeug==2.3.7
+
+# 数据库
+SQLAlchemy==2.0.23
+alembic==1.12.1
+
+# 数据处理
+pandas==2.1.4
+numpy==1.24.3
+
+# 自然语言处理
+jieba==0.42.1
+spacy==3.7.2
+
+# 配置管理
+python-dotenv==1.0.0
+PyYAML==6.0.1
+
+# 日志
+loguru==0.7.2
+
+# 测试
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# 开发工具
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+
+# 性能监控
+psutil==5.9.6
+
+# 时间处理
+python-dateutil==2.8.2
+
+# JSON处理
+ujson==5.8.0
+
+# 网络请求
+requests==2.31.0
+httpx==0.25.2
+
+# 加密
+cryptography==41.0.8
+
+# 缓存
+redis==5.0.1
+
+# 异步支持
+asyncio-mqtt==0.16.1
+
+# 文档生成
+sphinx==7.2.6
+sphinx-rtd-theme==1.3.0

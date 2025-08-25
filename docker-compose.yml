@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  memory-x:
+    build: .
+    container_name: memory-x
+    ports:
+      - "5000:5000"
+    environment:
+      - MEMORY_ENV=production
+      - MEMORY_SERVICE_HOST=0.0.0.0
+      - MEMORY_SERVICE_PORT=5000
+      - MEMORY_DB_TYPE=sqlite
+      - MEMORY_DB_PATH=./memory_db/memory.db
+      - MEMORY_LOG_LEVEL=INFO
+    volumes:
+      - ./memory_db:/app/memory_db
+      - ./logs:/app/logs
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 可选：Redis缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: memory-x-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # 可选：MySQL数据库服务
+  mysql:
+    image: mysql:8.0
+    container_name: memory-x-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: memory_root_pass
+      MYSQL_DATABASE: memory_x
+      MYSQL_USER: memory_user
+      MYSQL_PASSWORD: memory_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init-mysql.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  mysql_data:
