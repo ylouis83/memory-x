@@ -8,7 +8,7 @@ placeholders so tests can run without Cloud Spanner access.
 
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 try:  # pragma: no cover - optional dependency
     from google.cloud import spanner  # type: ignore
@@ -84,3 +84,27 @@ class SpannerMemoryStore(MemoryStore):
             )
             row = list(result)[0]
             return {"total_long_term": row[0]}
+
+    # Retrieval -----------------------------------------------------------------
+    def search_memories(self, user_id: str, query: str, top_k: int = 5) -> List[Dict]:  # pragma: no cover - illustrative
+        """Search memories via Cloud Spanner.
+
+        A production implementation would use Spanner's vector search
+        capabilities or an auxiliary embedding index. The stub returns an
+        empty list when the Spanner client is unavailable so tests can run
+        without cloud connectivity.
+        """
+        if self.client is None:
+            return []
+        # Example placeholder query; not executed in tests
+        del query, top_k
+        with self.database.snapshot() as snapshot:
+            result = snapshot.execute_sql(
+                "SELECT content FROM memories WHERE user_id=@uid LIMIT @k",
+                params={"uid": user_id, "k": top_k},
+                param_types={
+                    "uid": spanner.param_types.STRING,
+                    "k": spanner.param_types.INT64,
+                },
+            )
+            return [{"content": row[0], "score": 0.0} for row in result]

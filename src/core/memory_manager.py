@@ -94,6 +94,10 @@ class SimpleMemoryManager:
             "total_long_term": stats.get("total_long_term", 0),
             "session_id": f"session_{datetime.now().strftime('%Y%m%d')}",
         }
+
+    def retrieve_memories(self, query: str, top_k: int = 5) -> List[Dict]:
+        """Retrieve memories relevant to ``query`` using the configured store."""
+        return self.store.search_memories(self.user_id, query, top_k)
     
     def clear_session(self):
         """清空会话"""

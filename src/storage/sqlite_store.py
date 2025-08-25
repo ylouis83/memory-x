@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import sqlite3
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from .base import MemoryStore
 
@@ -32,10 +33,16 @@ class SQLiteMemoryStore(MemoryStore):
                 importance INTEGER NOT NULL,
                 entities TEXT,
                 intent TEXT,
-                timestamp TEXT NOT NULL
+                timestamp TEXT NOT NULL,
+                embedding TEXT
             )
             """
         )
+        # Ensure the embedding column exists for legacy databases
+        cursor.execute("PRAGMA table_info(memories)")
+        cols = [row[1] for row in cursor.fetchall()]
+        if "embedding" not in cols:
+            cursor.execute("ALTER TABLE memories ADD COLUMN embedding TEXT")
         conn.commit()
         conn.close()
 
@@ -50,11 +57,12 @@ class SQLiteMemoryStore(MemoryStore):
     ) -> None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+        embedding = json.dumps(self._embed(user_message))
         cursor.execute(
             """
             INSERT INTO memories
-            (user_id, content, message_type, importance, entities, intent, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (user_id, content, message_type, importance, entities, intent, timestamp, embedding)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user_id,
@@ -64,6 +72,7 @@ class SQLiteMemoryStore(MemoryStore):
                 json.dumps(entities),
                 intent,
                 datetime.now().isoformat(),
+                embedding,
             ),
         )
         conn.commit()
@@ -79,3 +88,45 @@ class SQLiteMemoryStore(MemoryStore):
         total_long_term = cursor.fetchone()[0]
         conn.close()
         return {"total_long_term": total_long_term}
+
+    # Retrieval -----------------------------------------------------------------
+    @staticmethod
+    def _embed(text: str) -> List[float]:
+        """Simple character frequency embedding used for tests.
+
+        The vector dimension is fixed at 26 (letters a-z)."""
+        vec = [0.0] * 26
+        for ch in text.lower():
+            if "a" <= ch <= "z":
+                vec[ord(ch) - 97] += 1.0
+        return vec
+
+    @staticmethod
+    def _cosine(a: List[float], b: List[float]) -> float:
+        dot = sum(x * y for x, y in zip(a, b))
+        na = math.sqrt(sum(x * x for x in a))
+        nb = math.sqrt(sum(y * y for y in b))
+        if na == 0 or nb == 0:
+            return 0.0
+        return dot / (na * nb)
+
+    def search_memories(self, user_id: str, query: str, top_k: int = 5) -> List[Dict]:
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT content, embedding FROM memories WHERE user_id = ?",
+            (user_id,),
+        )
+        rows = cursor.fetchall()
+        query_vec = self._embed(query)
+        results: List[Dict] = []
+        for content, emb_text in rows:
+            try:
+                emb = json.loads(emb_text) if emb_text else []
+            except json.JSONDecodeError:
+                emb = []
+            score = self._cosine(query_vec, emb)
+            results.append({"content": content, "score": score})
+        conn.close()
+        results.sort(key=lambda x: x["score"], reverse=True)
+        return results[:top_k]
