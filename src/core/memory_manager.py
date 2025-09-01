@@ -8,7 +8,7 @@ This allows using Cloud Spanner for scalable deployments while keeping the
 lightweight SQLite store for tests and local development.
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import Dict, List, Optional
 from collections import deque
 
@@ -19,6 +19,13 @@ from src.storage import (
     SQLiteMemoryStore,
     SpannerMemoryStore,
     Mem0MemoryStore,
+)
+from src.modules.medical_validator import (
+    assess_statement,
+    parse_time_phrase,
+    TimeWindow,
+    update_time_window,
+    Precision,
 )
 
 class SimpleMemoryManager:
@@ -47,6 +54,8 @@ class SimpleMemoryManager:
         # 短期记忆
         self.short_term_memory = deque(maxlen=10)
         self.working_memory = {}
+        # 症状时间窗（仅在运行期维护，用于时间精度提升；键：症状名）
+        self.symptom_windows: Dict[str, TimeWindow] = {}
     
     def add_conversation(
         self,
@@ -58,19 +67,66 @@ class SimpleMemoryManager:
     ) -> bool:
         """添加对话"""
         try:
+            # 1) 基础有效性校验（拦截明显造假/矛盾信息）
+            validation = assess_statement(user_message)
+            if not validation.is_valid:
+                # 允许进入短期记忆用于上下文，但拒绝合入长期（importance 强制视为 <3）
+                importance_for_persist = 0
+            else:
+                importance_for_persist = importance
+
+            # 2) 解析时间短语，并与既有症状时间窗合并（不降级精度）
+            time_payloads: List[Dict] = []
+            parsed = parse_time_phrase(user_message)
+            # 统一实体结构
+            entities = entities or {}
+            # 提取症状名列表
+            symptom_names: List[str] = []
+            if 'SYMPTOM' in entities:
+                for e in entities['SYMPTOM']:
+                    name = e[0] if isinstance(e, (list, tuple)) and e else str(e)
+                    symptom_names.append(name)
+            # 如果没有显性症状，但存在时间短语，也记录为通用时间（symptom=None）
+            if parsed:
+                new_tw = TimeWindow(start=parsed.start, end=parsed.end, precision=parsed.precision, approximate=parsed.approximate)
+                targets = symptom_names if symptom_names else [None]
+                for sym in targets:
+                    key = sym or "__general__"
+                    if key in self.symptom_windows:
+                        action, updated_tw = update_time_window(self.symptom_windows[key], new_tw)
+                        # 对于 append（非同一发作），保持原窗口不变
+                        if action != 'append':
+                            self.symptom_windows[key] = updated_tw
+                    else:
+                        self.symptom_windows[key] = new_tw
+                    tw = self.symptom_windows[key]
+                    time_payloads.append({
+                        'symptom': sym,
+                        'start': tw.start.isoformat(),
+                        'end': tw.end.isoformat() if tw.end else None,
+                        'precision': Precision(tw.precision).name,
+                        'approximate': tw.approximate,
+                        'phrase': parsed.phrase,
+                    })
+
             conversation = {
                 "user_message": user_message,
                 "ai_response": ai_response,
                 "timestamp": datetime.now(),
-                "entities": entities or {},
+                "entities": entities,
                 "intent": intent,
                 "importance": importance,
             }
 
+            # 将时间归一化结果写入实体（不破坏原结构）
+            if time_payloads:
+                entities.setdefault('TIME', [])
+                entities['TIME'].extend(time_payloads)
+
             self.short_term_memory.append(conversation)
             self._update_working_memory(entities, intent)
 
-            if importance >= 3:
+            if importance_for_persist >= 3:
                 self.store.add_conversation(
                     self.user_id,
                     user_message,
@@ -88,6 +144,9 @@ class SimpleMemoryManager:
         """更新工作记忆"""
         if entities:
             for entity_type, entity_list in entities.items():
+                # 跳过时间结构（包含字典对象，不适合作为集合项）
+                if entity_type == 'TIME':
+                    continue
                 if entity_type not in self.working_memory:
                     self.working_memory[entity_type] = set()
                 
