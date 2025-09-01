@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "success_count": 13,
+    "failure_count": 1,
+    "total_count": 14,
+    "success_rate": 92.85714285714286
+  },
+  "details": [
+    {
+      "test_name": "基本记忆操作",
+      "success": false,
+      "details": "异常: 'SimpleMemoryManager' object has no attribute 'search_memories'",
+      "timestamp": "2025-09-01T15:12:00.422913"
+    },
+    {
+      "test_name": "医疗记忆 APPEND 操作",
+      "success": true,
+      "details": "新增用药记录: 12345",
+      "timestamp": "2025-09-01T15:12:00.423052"
+    },
+    {
+      "test_name": "医疗记忆 UPDATE 操作",
+      "success": true,
+      "details": "更新疗程，版本: 2",
+      "timestamp": "2025-09-01T15:12:00.423071"
+    },
+    {
+      "test_name": "医疗记忆 MERGE 操作",
+      "success": true,
+      "details": "合并疗程，最终版本: 3",
+      "timestamp": "2025-09-01T15:12:00.423086"
+    },
+    {
+      "test_name": "FHIR APPEND 决策",
+      "success": true,
+      "details": "不同药物正确识别为新增",
+      "timestamp": "2025-09-01T15:12:00.423102"
+    },
+    {
+      "test_name": "FHIR UPDATE 决策",
+      "success": true,
+      "details": "同一疗程正确识别为更新",
+      "timestamp": "2025-09-01T15:12:00.423118"
+    },
+    {
+      "test_name": "FHIR MERGE 决策",
+      "success": true,
+      "details": "分裂疗程正确识别为合并",
+      "timestamp": "2025-09-01T15:12:00.423127"
+    },
+    {
+      "test_name": "记忆版本初始化",
+      "success": true,
+      "details": "版本: 1",
+      "timestamp": "2025-09-01T15:12:00.423138"
+    },
+    {
+      "test_name": "记忆版本更新",
+      "success": true,
+      "details": "版本递增: 2",
+      "timestamp": "2025-09-01T15:12:01.428324"
+    },
+    {
+      "test_name": "记忆版本合并",
+      "success": true,
+      "details": "最终版本: 3",
+      "timestamp": "2025-09-01T15:12:02.433659"
+    },
+    {
+      "test_name": "空记录列表处理",
+      "success": true,
+      "details": "",
+      "timestamp": "2025-09-01T15:12:02.433921"
+    },
+    {
+      "test_name": "相同时间点记录",
+      "success": true,
+      "details": "处理动作: update",
+      "timestamp": "2025-09-01T15:12:02.433991"
+    },
+    {
+      "test_name": "超长间隔记录",
+      "success": true,
+      "details": "正确识别为独立疗程",
+      "timestamp": "2025-09-01T15:12:02.434067"
+    },
+    {
+      "test_name": "不同剂量处理",
+      "success": true,
+      "details": "正确识别为不同方案",
+      "timestamp": "2025-09-01T15:12:02.434116"
+    }
+  ]
+}
