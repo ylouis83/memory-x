@@ -1,6 +1,6 @@
 # Memory-X | 智能记忆管理系统
 
- Memory-X 是一个参考 Google Vertex AI Memory Bank 设计的 Python 记忆管理系统。它提供统一的 `MemoryManager` 与可插拔的 `MemoryStore`，默认使用轻量级的 `SQLiteMemoryStore`，并预留 `SpannerMemoryStore` 以便未来接入 Cloud Spanner 等云数据库，实现全球分布式记忆存储。此外，通过 `Mem0MemoryStore`，项目可以直接复用 [mem0](https://github.com/mem0ai/mem0) 的向量化记忆能力。
+Memory-X 是一个参考 Google Vertex AI Memory Bank 设计的 Python 记忆管理系统。它提供统一的 `MemoryManager` 与可插拔的 `MemoryStore`，默认使用轻量级的 `SQLiteMemoryStore`，并预留 `SpannerMemoryStore` 以便未来接入 Cloud Spanner 等云数据库，实现全球分布式记忆存储。此外，通过 `Mem0MemoryStore`，项目可以直接复用 [mem0](https://github.com/mem0ai/mem0) 的向量化记忆能力。
 
 ## ✨ 特性
 - 层次化记忆：短期、工作和长期记忆分层管理
