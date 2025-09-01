@@ -1,76 +1,87 @@
 #!/usr/bin/env python3
-"""
-简化版记忆管理系统
+"""Simplified memory management system.
+
+The original implementation stored long‑term memory directly in a local
+SQLite database. To better mirror Google Vertex AI's architecture, the
+manager now delegates persistence to pluggable ``MemoryStore`` backends.
+This allows using Cloud Spanner for scalable deployments while keeping the
+lightweight SQLite store for tests and local development.
 """
 
-import json
-import sqlite3
-import os
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 from collections import deque
-import logging
+
+import os
+
+from src.storage import (
+    MemoryStore,
+    SQLiteMemoryStore,
+    SpannerMemoryStore,
+    Mem0MemoryStore,
+)
 
 class SimpleMemoryManager:
     """简化版记忆管理器"""
-    
-    def __init__(self, user_id: str, db_path: str = "data/simple_memory.db"):
+
+    def __init__(
+        self,
+        user_id: str,
+        db_path: str = "data/simple_memory.db",
+        store: Optional[MemoryStore] = None,
+    ):
         self.user_id = user_id
-        self.db_path = db_path
-        
-        # 确保数据目录存在
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
-        
+        # 仍然保留 ``db_path`` 参数以兼容现有代码；当未提供
+        # ``store`` 时使用本地 SQLite 实现。
+        if store is not None:
+            self.store = store
+        else:
+            backend = os.getenv("MEMORY_DB_TYPE", "sqlite").lower()
+            if backend == "spanner":
+                self.store = SpannerMemoryStore()
+            elif backend == "mem0" and Mem0MemoryStore is not None:
+                self.store = Mem0MemoryStore()
+            else:
+                self.store = SQLiteMemoryStore(db_path)
+
         # 短期记忆
         self.short_term_memory = deque(maxlen=10)
         self.working_memory = {}
-        
-        # 初始化数据库
-        self._init_database()
     
-    def _init_database(self):
-        """初始化数据库"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS memories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
-                content TEXT NOT NULL,
-                message_type TEXT NOT NULL,
-                importance INTEGER NOT NULL,
-                entities TEXT,
-                intent TEXT,
-                timestamp TEXT NOT NULL
-            )
-        ''')
-        
-        conn.commit()
-        conn.close()
-    
-    def add_conversation(self, user_message: str, ai_response: str, 
-                        entities: Dict = None, intent: str = None,
-                        importance: int = 2) -> bool:
+    def add_conversation(
+        self,
+        user_message: str,
+        ai_response: str,
+        entities: Dict = None,
+        intent: str = None,
+        importance: int = 2,
+    ) -> bool:
         """添加对话"""
         try:
             conversation = {
-                'user_message': user_message,
-                'ai_response': ai_response,
-                'timestamp': datetime.now(),
-                'entities': entities or {},
-                'intent': intent,
-                'importance': importance
+                "user_message": user_message,
+                "ai_response": ai_response,
+                "timestamp": datetime.now(),
+                "entities": entities or {},
+                "intent": intent,
+                "importance": importance,
             }
-            
+
             self.short_term_memory.append(conversation)
             self._update_working_memory(entities, intent)
-            
+
             if importance >= 3:
-                self._store_to_long_term(user_message, ai_response, entities, intent, importance)
-            
+                self.store.add_conversation(
+                    self.user_id,
+                    user_message,
+                    ai_response,
+                    entities,
+                    intent,
+                    importance,
+                )
+
             return True
-        except Exception as e:
+        except Exception:
             return False
     
     def _update_working_memory(self, entities: Dict, intent: str):
@@ -89,52 +100,24 @@ class SimpleMemoryManager:
         if intent:
             self.working_memory['current_intent'] = intent
     
-    def _store_to_long_term(self, user_message: str, ai_response: str,
-                           entities: Dict, intent: str, importance: int):
-        """存储到长期记忆"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                INSERT INTO memories 
-                (user_id, content, message_type, importance, entities, intent, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                self.user_id, user_message, 'user', importance,
-                json.dumps(entities), intent, datetime.now().isoformat()
-            ))
-            
-            conn.commit()
-            conn.close()
-        except Exception as e:
-            pass
-    
     def get_memory_stats(self) -> Dict:
         """获取记忆统计"""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('SELECT COUNT(*) FROM memories WHERE user_id = ?', (self.user_id,))
-            long_term_count = cursor.fetchone()[0]
-            
-            conn.close()
-            
-            return {
-                'user_id': self.user_id,
-                'short_term_count': len(self.short_term_memory),
-                'working_memory_size': len(self.working_memory),
-                'total_long_term': long_term_count,
-                'session_id': f"session_{datetime.now().strftime('%Y%m%d')}"
-            }
-        except:
-            return {
-                'user_id': self.user_id,
-                'short_term_count': 0,
-                'working_memory_size': 0,
-                'total_long_term': 0
-            }
+        stats = self.store.get_stats(self.user_id)
+        return {
+            "user_id": self.user_id,
+            "short_term_count": len(self.short_term_memory),
+            "working_memory_size": len(self.working_memory),
+            "total_long_term": stats.get("total_long_term", 0),
+            "session_id": f"session_{datetime.now().strftime('%Y%m%d')}",
+        }
+
+    def retrieve_memories(self, query: str, top_k: int = 5) -> List[Dict]:
+        """Retrieve memories relevant to ``query`` using the configured store."""
+        return self.store.search_memories(self.user_id, query, top_k)
+
+    def search_long_term_memory(self, query: str, limit: int = 5) -> List[Dict]:
+        """Alias for :meth:`retrieve_memories` for backward compatibility."""
+        return self.retrieve_memories(query, limit)
     
     def clear_session(self):
         """清空会话"""
@@ -167,12 +150,19 @@ class SimpleMemoryIntegratedAI:
             # 评估重要性
             importance = self._evaluate_importance(intent, entities)
             
+            # 在长期记忆中检索相关内容
+            retrieved = memory_manager.search_long_term_memory(user_message)
+
             # 生成回复
             ai_response = self._generate_response(user_message, intent, entities)
-            
+            if retrieved:
+                ai_response = f"我记得你提到过：{retrieved[0]['content']}。" + ai_response
+
             # 存储对话
-            memory_manager.add_conversation(user_message, ai_response, entities, intent, importance)
-            
+            memory_manager.add_conversation(
+                user_message, ai_response, entities, intent, importance
+            )
+
             return {
                 'success': True,
                 'response': ai_response,
@@ -180,7 +170,8 @@ class SimpleMemoryIntegratedAI:
                 'memory_info': {
                     'importance': importance,
                     'used_long_term': importance >= 3,
-                    'context_continuity': 0.7
+                    'context_continuity': 0.7,
+                    'retrieved': len(retrieved),
                 }
             }
         except Exception as e:
