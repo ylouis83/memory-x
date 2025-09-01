@@ -11,8 +11,14 @@ from .base import MemoryStore
 from .sqlite_store import SQLiteMemoryStore
 from .spanner_store import SpannerMemoryStore
 
+try:  # Optional dependency
+    from .mem0_store import Mem0MemoryStore
+except ImportError:  # pragma: no cover
+    Mem0MemoryStore = None  # type: ignore
+
 __all__ = [
     "MemoryStore",
     "SQLiteMemoryStore",
     "SpannerMemoryStore",
+    "Mem0MemoryStore",
 ]

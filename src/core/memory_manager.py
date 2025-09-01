@@ -12,7 +12,14 @@ from datetime import datetime
 from typing import Dict, List, Optional
 from collections import deque
 
-from src.storage import MemoryStore, SQLiteMemoryStore
+import os
+
+from src.storage import (
+    MemoryStore,
+    SQLiteMemoryStore,
+    SpannerMemoryStore,
+    Mem0MemoryStore,
+)
 
 class SimpleMemoryManager:
     """简化版记忆管理器"""
@@ -26,7 +33,16 @@ class SimpleMemoryManager:
         self.user_id = user_id
         # 仍然保留 ``db_path`` 参数以兼容现有代码；当未提供
         # ``store`` 时使用本地 SQLite 实现。
-        self.store = store or SQLiteMemoryStore(db_path)
+        if store is not None:
+            self.store = store
+        else:
+            backend = os.getenv("MEMORY_DB_TYPE", "sqlite").lower()
+            if backend == "spanner":
+                self.store = SpannerMemoryStore()
+            elif backend == "mem0" and Mem0MemoryStore is not None:
+                self.store = Mem0MemoryStore()
+            else:
+                self.store = SQLiteMemoryStore(db_path)
 
         # 短期记忆
         self.short_term_memory = deque(maxlen=10)
