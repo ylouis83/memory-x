@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory-X + Mem0 端到端演示</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial; margin: 24px; }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    .row { display: flex; gap: 12px; margin: 8px 0; }
+    input[type="text"], textarea { width: 100%; padding: 8px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    .card { border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-top: 12px; }
+    .muted { color: #666; font-size: 12px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: #fafafa; padding: 8px; border-radius: 4px; }
+  </style>
+  <script>
+    const apiBase = location.origin;
+
+    async function chat() {
+      const userId = document.getElementById('userId').value || 'demo_user';
+      const msg = document.getElementById('message').value.trim();
+      if (!msg) return alert('请输入消息');
+      const res = await fetch(`${apiBase}/api/memory/chat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, message: msg })
+      });
+      const data = await res.json();
+      document.getElementById('chatOut').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function searchMem() {
+      const userId = document.getElementById('userId').value || 'demo_user';
+      const q = document.getElementById('query').value.trim();
+      const res = await fetch(`${apiBase}/api/memory/${encodeURIComponent(userId)}?query=${encodeURIComponent(q)}&limit=5`);
+      const data = await res.json();
+      document.getElementById('searchOut').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function stats() {
+      const userId = document.getElementById('userId').value || 'demo_user';
+      const res = await fetch(`${apiBase}/api/memory/${encodeURIComponent(userId)}/stats`);
+      const data = await res.json();
+      document.getElementById('statsOut').textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</head>
+<body>
+  <h1>Memory-X + Mem0 端到端演示</h1>
+  <div class="muted">启动前请设置环境变量并启动服务：<br/>
+    <code>export MEMORY_DB_TYPE=mem0</code>，然后运行 <code>python run.py</code>（或自定义方式）。
+  </div>
+
+  <div class="row">
+    <label>用户ID：</label>
+    <input id="userId" type="text" placeholder="demo_user" value="demo_user" />
+  </div>
+
+  <div class="card">
+    <h2>1) 聊天并写入记忆</h2>
+    <div class="row"><textarea id="message" rows="3" placeholder="例如：最近1周头痛，晚上更明显。"></textarea></div>
+    <div><button onclick="chat()">发送聊天</button></div>
+    <pre id="chatOut"></pre>
+  </div>
+
+  <div class="card">
+    <h2>2) 检索相关记忆</h2>
+    <div class="row"><input id="query" type="text" placeholder="头痛" value="头痛"/></div>
+    <div><button onclick="searchMem()">搜索</button></div>
+    <pre id="searchOut"></pre>
+  </div>
+
+  <div class="card">
+    <h2>3) 统计</h2>
+    <div><button onclick="stats()">获取统计</button></div>
+    <pre id="statsOut"></pre>
+  </div>
+</body>
+</html>
+

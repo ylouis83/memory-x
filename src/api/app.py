@@ -8,7 +8,7 @@ Memory-X API 应用主文件
 
 import os
 import sys
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from loguru import logger
 
@@ -100,8 +100,8 @@ def create_app(config_name: str = None):
             memory_manager = memory_ai.get_memory_manager(user_id)
             
             if query:
-                # 搜索相关记忆
-                memories = memory_manager.get_relevant_memories(query)
+                # 搜索相关记忆（长程检索）
+                memories = memory_manager.retrieve_memories(query, top_k=limit)
             else:
                 # 获取最近记忆
                 memories = list(memory_manager.short_term_memory)[-limit:]
@@ -235,7 +235,7 @@ def create_app(config_name: str = None):
             else:
                 # 基础查询
                 query_text = query_params.get('query', '')
-                result = {'type': 'basic', 'data': memory_manager.get_relevant_memories(query_text)}
+                result = {'type': 'basic', 'data': memory_manager.retrieve_memories(query_text, top_k=10)}
             
             return jsonify({
                 'success': True,
@@ -253,6 +253,16 @@ def create_app(config_name: str = None):
         logger.info("DashScope API路由已注册")
     else:
         logger.warning("DashScope API路由未注册，请检查依赖")
+
+    @app.route('/demo/mem0', methods=['GET'])
+    def demo_mem0():
+        """演示用前端页面（Mem0端到端）。"""
+        try:
+            base_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'examples'))
+            return send_from_directory(base_dir, 'mem0_frontend.html')
+        except Exception as e:
+            logger.error(f"Error serving demo: {e}")
+            return jsonify({'error': str(e)}), 500
     
     @app.errorhandler(404)
     def not_found(error):
