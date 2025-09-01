@@ -65,7 +65,30 @@ def _temporal_affinity(a: MedicationEntry, b: MedicationEntry) -> float:
     return 0.2 * exp(-gap_days / 30.0)
 
 
-def compute_merge_confidence(current: MedicationEntry, new: MedicationEntry) -> Tuple[str, float]:
+HIGH_RISK_KEYWORDS = {
+    # Anticoagulants, insulin, narrow therapeutic index, teratogens, chemo
+    "warfarin", "heparin", "insulin", "clopidogrel", "digoxin", "lithium",
+    "amiodarone", "theophylline", "carbamazepine", "valproate", "valproic",
+    "phenytoin", "methotrexate", "cyclophosphamide", "isotretinoin",
+}
+
+
+def _is_high_risk(name_or_code: Optional[str], override: Optional[bool]) -> bool:
+    if override is not None:
+        return override
+    if not name_or_code:
+        return False
+    key = str(name_or_code).lower()
+    return any(kw in key for kw in HIGH_RISK_KEYWORDS)
+
+
+def compute_merge_confidence(
+    current: MedicationEntry,
+    new: MedicationEntry,
+    *,
+    approximate_time: Optional[bool] = None,
+    high_risk: Optional[bool] = None,
+) -> Tuple[str, float]:
     """Return (proposed_action, confidence in 0..1) for merging ``new`` with ``current``.
 
     Heuristics:
@@ -87,7 +110,7 @@ def compute_merge_confidence(current: MedicationEntry, new: MedicationEntry) -> 
     else:
         conf -= 0.4
 
-    # Temporal
+    # Temporal affinity
     conf += _temporal_affinity(current, new)
 
     # Provenance: average of sources
@@ -97,23 +120,50 @@ def compute_merge_confidence(current: MedicationEntry, new: MedicationEntry) -> 
     # Recency bonus
     conf += _recency_bonus(current)
 
-    # Clamp
+    # Time approximation discount
+    if approximate_time is True:
+        conf -= 0.07
+
+    # Clamp before decision
     conf = max(0.0, min(1.0, conf))
 
-    # Choose action according to temporal relation
+    # Candidate action by temporal relation + regimen
     if same_regimen(current, new):
         if overlap_or_adjacent(current, new):
-            action = "UPDATE"
-            conf = max(conf, 0.75)
+            candidate = "UPDATE"
         elif is_split_episode(current, new):
+            candidate = "MERGE"
+        else:
+            candidate = "APPEND"
+    else:
+        candidate = "APPEND"
+
+    # Threshold gating with high-risk uplift
+    is_risk = _is_high_risk(new.rxnorm or current.rxnorm, high_risk)
+    thresh_update = 0.80 if is_risk else 0.75
+    thresh_merge = 0.75 if is_risk else 0.70
+
+    # Additional discount if both high-risk and time approximate
+    if is_risk and approximate_time is True:
+        conf -= 0.03
+        conf = max(0.0, min(1.0, conf))
+
+    # Apply thresholds to decide final action
+    if candidate == "UPDATE":
+        if conf >= thresh_update:
+            action = "UPDATE"
+        else:
+            action = "APPEND"
+            conf = min(conf, 0.6)
+    elif candidate == "MERGE":
+        if conf >= thresh_merge:
             action = "MERGE"
-            conf = max(conf, 0.7)
         else:
             action = "APPEND"
             conf = min(conf, 0.6)
     else:
         action = "APPEND"
-        conf = min(conf, 0.5)
+        conf = min(conf, 0.6)
 
     return action, conf
 
@@ -130,4 +180,3 @@ def decide_with_confidence(existing: Iterable[MedicationEntry], new: MedicationE
         if not best_decision or d.confidence > best_decision.confidence:
             best_decision = d
     return best_decision or Decision(action="APPEND", confidence=0.5, candidate=None)
-
