@@ -64,10 +64,10 @@ def test_merge_produces_single_active_entry():
 
     # First segment already stored as completed therapy
     first = MedicationEntry(
-        rxnorm="777", 
-        dose="10 mg", 
-        frequency="qd", 
-        route="oral", 
+        rxnorm="777",
+        dose="10 mg",
+        frequency="qd",
+        route="oral",
         start=now - timedelta(days=20),
         end=now - timedelta(days=10),
         status="completed",
@@ -95,3 +95,4 @@ def test_merge_produces_single_active_entry():
     assert merged.version_id == first.version_id + 1
     # provenance of the newest information should be kept
     assert merged.provenance == "clinic"
+
