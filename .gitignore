@@ -169,3 +169,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Test reports (auto-generated)
+tests/test_report_*.json
+tests/memory_test_report_*.json
+tests/reports/*.json
