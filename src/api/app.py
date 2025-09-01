@@ -258,8 +258,15 @@ def create_app(config_name: str = None):
     def demo_mem0():
         """演示用前端页面（Mem0端到端）。"""
         try:
-            base_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'examples'))
-            return send_from_directory(base_dir, 'mem0_frontend.html')
+            # 计算 examples 目录的绝对路径：<repo>/memory-x/examples
+            here = os.path.abspath(os.path.dirname(__file__))           # .../memory-x/src/api
+            repo_root = os.path.abspath(os.path.join(here, '..', '..')) # .../memory-x
+            examples_dir = os.path.join(repo_root, 'examples')
+            target = os.path.join(examples_dir, 'mem0_frontend.html')
+            if not os.path.exists(target):
+                logger.error(f"Demo file not found: {target}")
+                return jsonify({'error': f'Demo file not found: {target}'}), 404
+            return send_from_directory(examples_dir, 'mem0_frontend.html')
         except Exception as e:
             logger.error(f"Error serving demo: {e}")
             return jsonify({'error': str(e)}), 500
