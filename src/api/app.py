@@ -17,6 +17,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from configs.settings import get_config
 from src.core.memory_manager import SimpleMemoryManager, SimpleMemoryIntegratedAI
+from src.core.merge_confidence import compute_merge_confidence
+from src.core.medical_memory import MedicationEntry
+from src.storage.sqlite_store import SQLiteMemoryStore
 
 # 导入DashScope路由
 try:
@@ -115,6 +118,66 @@ def create_app(config_name: str = None):
             
         except Exception as e:
             logger.error(f"Error getting memory: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/memory/delete', methods=['POST'])
+    def delete_memory():
+        """删除长期记忆（SQLite 存储后端专用演示接口）。"""
+        try:
+            data = request.get_json(force=True)
+            user_id = data.get('user_id')
+            pattern = data.get('pattern')  # e.g. "%头痛%"
+            if not user_id or not pattern:
+                return jsonify({'error': 'user_id and pattern are required'}), 400
+
+            # 仅当底层为 SQLite 时支持
+            mgr = memory_ai.get_memory_manager(user_id)
+            store = mgr.store
+            if isinstance(store, SQLiteMemoryStore):
+                deleted = store.delete_by_pattern(user_id, pattern)
+                return jsonify({'success': True, 'deleted': deleted})
+            else:
+                return jsonify({'error': 'Delete not supported for this backend'}), 501
+        except Exception as e:
+            logger.error(f"Error deleting memory: {e}")
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/medical/decide', methods=['POST'])
+    def medical_decide():
+        """基于医疗规则返回 MERGE/UPDATE/APPEND 与置信度（模拟/校验用途）。"""
+        try:
+            payload = request.get_json(force=True)
+            cur = payload.get('current') or {}
+            new = payload.get('new') or {}
+            approximate_time = payload.get('approximate_time')
+            high_risk = payload.get('high_risk')
+
+            def parse_entry(d: dict) -> MedicationEntry:
+                from datetime import datetime
+                def to_dt(s):
+                    if not s:
+                        return None
+                    return datetime.fromisoformat(s)
+                return MedicationEntry(
+                    rxnorm=d.get('rxnorm', ''),
+                    dose=d.get('dose', ''),
+                    frequency=d.get('frequency', ''),
+                    route=d.get('route', ''),
+                    start=to_dt(d.get('start')) or datetime.utcnow(),
+                    end=to_dt(d.get('end')),
+                    provenance=d.get('provenance')
+                )
+
+            cur_e = parse_entry(cur)
+            new_e = parse_entry(new)
+            action, conf = compute_merge_confidence(
+                cur_e, new_e,
+                approximate_time=approximate_time,
+                high_risk=high_risk,
+            )
+            return jsonify({'success': True, 'action': action, 'confidence': conf})
+        except Exception as e:
+            logger.error(f"Error in medical_decide: {e}")
             return jsonify({'error': str(e)}), 500
     
     @app.route('/api/memory/<user_id>/stats', methods=['GET'])

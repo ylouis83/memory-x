@@ -29,6 +29,13 @@
       document.getElementById('chatOut').textContent = JSON.stringify(data, null, 2);
     }
 
+    async function fetchShort() {
+      const userId = document.getElementById('userId').value || 'demo_user';
+      const res = await fetch(`${apiBase}/api/memory/${encodeURIComponent(userId)}?limit=10`);
+      const data = await res.json();
+      document.getElementById('shortOut').textContent = JSON.stringify(data, null, 2);
+    }
+
     async function searchMem() {
       const userId = document.getElementById('userId').value || 'demo_user';
       const q = document.getElementById('query').value.trim();
@@ -42,6 +49,46 @@
       const res = await fetch(`${apiBase}/api/memory/${encodeURIComponent(userId)}/stats`);
       const data = await res.json();
       document.getElementById('statsOut').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function decideMerge() {
+      const body = {
+        current: {
+          rxnorm: document.getElementById('cur_rx').value || '11111',
+          dose: document.getElementById('cur_dose').value || '5 mg',
+          frequency: document.getElementById('cur_freq').value || 'qd',
+          route: document.getElementById('cur_route').value || 'oral',
+          start: document.getElementById('cur_start').value || new Date(Date.now()-7*86400000).toISOString(),
+          end: document.getElementById('cur_end').value || null,
+          provenance: document.getElementById('cur_prov').value || 'doctor'
+        },
+        new: {
+          rxnorm: document.getElementById('new_rx').value || '11111',
+          dose: document.getElementById('new_dose').value || '5 mg',
+          frequency: document.getElementById('new_freq').value || 'qd',
+          route: document.getElementById('new_route').value || 'oral',
+          start: document.getElementById('new_start').value || new Date().toISOString(),
+          end: document.getElementById('new_end').value || null,
+          provenance: document.getElementById('new_prov').value || 'chat'
+        },
+        approximate_time: document.getElementById('approx').checked,
+        high_risk: document.getElementById('hrisk').checked
+      };
+      const res = await fetch(`${apiBase}/api/medical/decide`, {
+        method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      document.getElementById('decideOut').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function delMem() {
+      const userId = document.getElementById('userId').value || 'demo_user';
+      const pattern = document.getElementById('delPattern').value || '%头痛%';
+      const res = await fetch(`${apiBase}/api/memory/delete`, {
+        method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ user_id: userId, pattern })
+      });
+      const data = await res.json();
+      document.getElementById('delOut').textContent = JSON.stringify(data, null, 2);
     }
   </script>
 </head>
@@ -64,9 +111,11 @@
   </div>
 
   <div class="card">
-    <h2>2) 检索相关记忆</h2>
+    <h2>2) 检索短期/长期记忆</h2>
+    <div class="row"><button onclick="fetchShort()">拉取短期（最近对话）</button></div>
+    <pre id="shortOut"></pre>
     <div class="row"><input id="query" type="text" placeholder="头痛" value="头痛"/></div>
-    <div><button onclick="searchMem()">搜索</button></div>
+    <div><button onclick="searchMem()">长期搜索</button></div>
     <pre id="searchOut"></pre>
   </div>
 
@@ -75,6 +124,38 @@
     <div><button onclick="stats()">获取统计</button></div>
     <pre id="statsOut"></pre>
   </div>
+
+  <div class="card">
+    <h2>4) 医疗合并校验（UPDATE/MERGE/APPEND + 置信度）</h2>
+    <div class="muted">填写“当前记录”与“新记录”，点击计算决策</div>
+    <div class="row"><input id="cur_rx" placeholder="当前 rxnorm (如 11111)"/></div>
+    <div class="row"><input id="cur_dose" placeholder="当前 剂量 (如 5 mg)"/></div>
+    <div class="row"><input id="cur_freq" placeholder="当前 频率 (如 qd)"/></div>
+    <div class="row"><input id="cur_route" placeholder="当前 途径 (如 oral)"/></div>
+    <div class="row"><input id="cur_start" placeholder="当前 开始时间 (ISO，如 2025-08-01T00:00:00)"/></div>
+    <div class="row"><input id="cur_end" placeholder="当前 结束时间 (可空)"/></div>
+    <div class="row"><input id="cur_prov" placeholder="当前 来源 (doctor/ehr/chat等)"/></div>
+    <hr/>
+    <div class="row"><input id="new_rx" placeholder="新 rxnorm (同药物应一致)"/></div>
+    <div class="row"><input id="new_dose" placeholder="新 剂量"/></div>
+    <div class="row"><input id="new_freq" placeholder="新 频率"/></div>
+    <div class="row"><input id="new_route" placeholder="新 途径"/></div>
+    <div class="row"><input id="new_start" placeholder="新 开始时间 (ISO)"/></div>
+    <div class="row"><input id="new_end" placeholder="新 结束时间 (可空)"/></div>
+    <div class="row"><input id="new_prov" placeholder="新 来源"/></div>
+    <div class="row" style="gap:24px;align-items:center;">
+      <label><input type="checkbox" id="approx"/> 时间近似</label>
+      <label><input type="checkbox" id="hrisk"/> 高风险药物</label>
+      <button onclick="decideMerge()">计算决策</button>
+    </div>
+    <pre id="decideOut"></pre>
+  </div>
+
+  <div class="card">
+    <h2>5) 删除长期记忆（SQLite 演示）</h2>
+    <div class="row"><input id="delPattern" placeholder="LIKE 模式，例如 %头痛%"/></div>
+    <div class="row"><button onclick="delMem()">删除</button></div>
+    <pre id="delOut"></pre>
+  </div>
 </body>
 </html>
-

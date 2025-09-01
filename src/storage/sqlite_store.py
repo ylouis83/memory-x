@@ -135,3 +135,20 @@ class SQLiteMemoryStore(MemoryStore):
         conn.close()
         results.sort(key=lambda x: x["score"], reverse=True)
         return results[:top_k]
+
+    # Additional helpers --------------------------------------------------------
+    def delete_by_pattern(self, user_id: str, pattern: str) -> int:
+        """Delete memories whose content LIKE ``pattern`` for a given user.
+
+        Returns the number of rows deleted.
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM memories WHERE user_id = ? AND content LIKE ?",
+            (user_id, pattern),
+        )
+        deleted = cursor.rowcount or 0
+        conn.commit()
+        conn.close()
+        return deleted
