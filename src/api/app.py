@@ -8,7 +8,7 @@ Memory-X API 应用主文件
 
 import os
 import sys
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
 from loguru import logger
 
@@ -270,6 +270,11 @@ def create_app(config_name: str = None):
         except Exception as e:
             logger.error(f"Error serving demo: {e}")
             return jsonify({'error': str(e)}), 500
+
+    @app.route('/', methods=['GET'])
+    def root_index():
+        """根路径跳转到演示页面。"""
+        return redirect('/demo/mem0', code=302)
     
     @app.errorhandler(404)
     def not_found(error):
