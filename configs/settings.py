@@ -32,8 +32,10 @@ class Config:
         'path': os.getenv('MEMORY_DB_PATH', './memory_db/memory.db'),
         'host': os.getenv('MEMORY_DB_HOST', 'localhost'),
         'port': int(os.getenv('MEMORY_DB_PORT', 3306)),
-        'user': os.getenv('MEMORY_DB_USER', 'memory_user'),
-        'password': os.getenv('MEMORY_DB_PASSWORD', 'memory_pass'),
+        # Use environment variables without hard-coded defaults to avoid
+        # committing sensitive credentials to the repository.
+        'user': os.getenv('MEMORY_DB_USER', ''),
+        'password': os.getenv('MEMORY_DB_PASSWORD', ''),
         'database': os.getenv('MEMORY_DB_NAME', 'memory_x'),
         'pool_size': int(os.getenv('MEMORY_DB_POOL_SIZE', 10)),
         'max_overflow': int(os.getenv('MEMORY_DB_MAX_OVERFLOW', 20)),
@@ -72,8 +74,10 @@ class Config:
     
     # 安全配置
     SECURITY = {
-        'secret_key': os.getenv('MEMORY_SECRET_KEY', 'memory-x-secret-key-2024'),
-        'jwt_secret': os.getenv('MEMORY_JWT_SECRET', 'memory-x-jwt-secret-2024'),
+        # Remove hard-coded secret values; these must be provided via
+        # environment variables in deployment.
+        'secret_key': os.getenv('MEMORY_SECRET_KEY', ''),
+        'jwt_secret': os.getenv('MEMORY_JWT_SECRET', ''),
         'jwt_expire_hours': int(os.getenv('MEMORY_JWT_EXPIRE_HOURS', 24)),
         'password_salt_rounds': int(os.getenv('MEMORY_PASSWORD_SALT_ROUNDS', 12)),
         'enable_rate_limiting': os.getenv('MEMORY_ENABLE_RATE_LIMITING', 'true').lower() == 'true'

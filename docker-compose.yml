@@ -41,10 +41,10 @@ services:
     image: mysql:8.0
     container_name: memory-x-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: memory_root_pass
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-}
       MYSQL_DATABASE: memory_x
-      MYSQL_USER: memory_user
-      MYSQL_PASSWORD: memory_pass
+      MYSQL_USER: ${MYSQL_USER:-}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
     ports:
       - "3306:3306"
     volumes:
