@@ -4,6 +4,10 @@ Memory-X 核心模块
 """
 
 from .memory_manager import SimpleMemoryManager, SimpleMemoryIntegratedAI
+from .medical_memory import (
+    MedicationEntry,
+    upsert_medication_entry,
+)
 
 # Alias for backward compatibility
 MemoryManager = SimpleMemoryManager
@@ -11,5 +15,7 @@ MemoryManager = SimpleMemoryManager
 __all__ = [
     'MemoryManager',
     'SimpleMemoryManager',
-    'SimpleMemoryIntegratedAI'
+    'SimpleMemoryIntegratedAI',
+    'MedicationEntry',
+    'upsert_medication_entry',
 ]

@@ -9,6 +9,7 @@ Memory-X 是一个参考 Google Vertex AI Memory Bank 设计的 Python 记忆管
 - RESTful API：基于 Flask，可选 DashScope 集成
 - 易于配置：支持环境变量或配置文件
 - 完善测试覆盖：单元测试与业务级场景测试
+- FHIR 风格的用药记忆：`medical_memory` 模块实现 Append/Update/Merge 规则
 
 ## 📦 安装
 ```bash
@@ -49,6 +50,19 @@ Memory-X 使用 `MemoryStore` 接口实现可插拔存储。
 ```bash
 export MEMORY_DB_TYPE=sqlite   # 或 spanner 或 mem0
 ```
+
+## 🩺 用药记忆的更新策略
+
+项目新增的 `medical_memory` 模块参考 FHIR `MedicationStatement` 设计，
+提供了 ``upsert_medication_entry`` 方法用于在 Append、Update、Merge 之间做出
+决策：
+
+- **Append**：发现全新疗程或不同方案时新增记录；
+- **Update**：同一疗程内补充剂量、时间等字段，自动增加版本号；
+- **Merge**：检测到被误分裂的疗程时合并时间区间，并写入新的版本。
+
+每条记录同时维护事实时间（`start`/`end`）与系统更新时间
+（`last_updated`/`version_id`），为审计和回溯提供基础。
 
 ## ⚙️ 配置
 所有敏感信息通过环境变量提供：
