@@ -56,3 +56,42 @@ def test_append_update_merge():
     assert entries[0].end is None
     assert entries[0].status == "active"
     assert entries[0].version_id == 3
+
+
+def test_merge_produces_single_active_entry():
+    """Merging two adjacent segments results in one active course."""
+    now = datetime.utcnow()
+
+    # First segment already stored as completed therapy
+    first = MedicationEntry(
+        rxnorm="777", 
+        dose="10 mg", 
+        frequency="qd", 
+        route="oral", 
+        start=now - timedelta(days=20),
+        end=now - timedelta(days=10),
+        status="completed",
+    )
+    entries = [first]
+
+    # Follow-up continuation within allowed merge gap
+    second = MedicationEntry(
+        rxnorm="777",
+        dose="10 mg",
+        frequency="qd",
+        route="oral",
+        start=first.end + timedelta(days=1),
+        provenance="clinic",
+    )
+
+    action = upsert_medication_entry(entries, second)
+    assert action == "merge"
+    assert len(entries) == 1
+
+    merged = entries[0]
+    assert merged.start == first.start
+    assert merged.end is None
+    assert merged.status == "active"
+    assert merged.version_id == first.version_id + 1
+    # provenance of the newest information should be kept
+    assert merged.provenance == "clinic"
