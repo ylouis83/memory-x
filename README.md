@@ -1,6 +1,6 @@
-# Memory-X | 智能记忆管理系统
+# Memory‑X | 智能记忆管理系统
 
-Memory-X 是一个参考 Google Vertex AI Memory Bank 设计的 Python 记忆管理系统。它提供统一的 `MemoryManager` 与可插拔的 `MemoryStore`，默认使用轻量级的 `SQLiteMemoryStore`，并预留 `SpannerMemoryStore` 以便未来接入 Cloud Spanner 等云数据库，实现全球分布式记忆存储。此外，通过 `Mem0MemoryStore`，项目可以直接复用 [mem0](https://github.com/mem0ai/mem0) 的向量化记忆能力。
+Memory‑X 参考 Google Vertex AI Memory Bank 设计，提供统一的 `MemoryManager` 与可插拔的 `MemoryStore`。默认使用轻量级 `SQLiteMemoryStore`，并预留 `SpannerMemoryStore` 以便未来接入 Cloud Spanner 实现全球分布式记忆存储。通过 `Mem0MemoryStore`，可直接复用 [mem0](https://github.com/mem0ai/mem0) 的向量化能力。
 
 ## ✨ 特性
 - 层次化记忆：短期、工作和长期记忆分层管理
@@ -14,7 +14,7 @@ Memory-X 是一个参考 Google Vertex AI Memory Bank 设计的 Python 记忆管
 ## 📦 安装
 ```bash
 # 克隆项目并进入目录
-git clone https://github.com/ylouis/memory-x.git
+git clone https://github.com/ylouis83/memory-x.git
 cd memory-x
 
 # 创建并激活虚拟环境
@@ -23,6 +23,12 @@ source venv/bin/activate  # Windows 使用 venv\\Scripts\\activate
 
 # 安装依赖
 pip install -r requirements.txt
+```
+
+或使用内置脚本快速启动：
+```bash
+bash scripts/setup_venv.sh
+source .venv/bin/activate
 ```
 
 ## 🚀 快速开始
@@ -51,6 +57,15 @@ Memory-X 使用 `MemoryStore` 接口实现可插拔存储。
 export MEMORY_DB_TYPE=sqlite   # 或 spanner 或 mem0
 ```
 
+## 🧭 症状与用药的合并规则
+
+项目在 `src/core/algorithms_reference.py` 中提供了“用药周期”和“症状发作”的 Append/Update/Merge 决策与置信度评分：
+
+- 用药：`decide_update_merge_append` / `compute_merge_confidence`
+- 症状：`decide_update_merge_append_symptom` / `compute_symptom_merge_confidence`
+
+症状合并与用药不同，更宽容时间空窗（默认 ≤14 天），并在高危症状（如胸痛、呼吸困难）场景提升阈值以确保安全。
+
 ## 🩺 用药记忆的更新策略
 
 项目新增的 `medical_memory` 模块参考 FHIR `MedicationStatement` 设计，
@@ -75,8 +90,26 @@ MEMORY_DB_PASSWORD=your_password
 
 ## 🧪 测试
 ```bash
-pytest -q
+pytest -q           # 或
+bash scripts/test.sh
 ```
+
+## 🛠️ 常用脚本
+
+- `scripts/setup_venv.sh`：创建并初始化虚拟环境
+- `scripts/test.sh`：运行测试
+- `scripts/run_api.sh`：启动最小 API
+- `scripts/clean.sh`：清理缓存/日志/测试报告
+- `scripts/push.sh`：推送当前分支至远程
+
+## 🧹 仓库卫生
+
+- 已通过 `.gitignore` 排除本地数据库、日志、缓存与测试报告 JSON 文件：
+  - `memory_db/*.db*`、`logs/`、`.pytest_cache/`、`.coverage`、`tests/*report*.json`、`tests/reports/*.json`
+- 如需清理工作区中的这些生成文件，执行：
+  ```bash
+  bash scripts/clean.sh
+  ```
 
 ## 📚 文档
 更多设计细节、API 说明和业务测试示例请见 [docs/](docs) 与 [examples/](examples)。
@@ -86,4 +119,3 @@ pytest -q
 
 ## 📄 许可证
 项目采用 [MIT License](LICENSE)。
-
