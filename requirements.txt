@@ -47,7 +47,7 @@ requests==2.31.0
 httpx==0.25.2
 
 # 加密
-cryptography==41.0.8
+cryptography>=41.0.0,<46.0.0
 
 # 缓存
 redis==5.0.1

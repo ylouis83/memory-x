@@ -6,7 +6,7 @@
 import sys
 sys.path.append('.')
 
-from modules.simple_memory_manager import SimpleMemoryIntegratedAI
+from src.core.memory_manager import SimpleMemoryIntegratedAI
 
 def test_memory_api():
     """测试记忆API功能"""

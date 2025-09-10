@@ -9,5 +9,8 @@ if ! command -v pytest >/dev/null 2>&1; then
   exit 1
 fi
 
+# 设置Python路径以包含项目根目录
+export PYTHONPATH="$root_dir:${PYTHONPATH:-}"
+
 pytest -q tests "$@"
 

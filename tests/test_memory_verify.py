@@ -12,7 +12,7 @@ def test_imports():
     print("📦 测试模块导入...")
     
     try:
-        from modules.simple_memory_manager import SimpleMemoryIntegratedAI
+        from src.core.memory_manager import SimpleMemoryIntegratedAI
         print("✅ 简化记忆管理器导入成功")
         
         # 创建实例
@@ -43,7 +43,7 @@ def test_database():
     print("\n💾 测试数据库功能...")
     
     try:
-        from modules.simple_memory_manager import SimpleMemoryManager
+        from src.core.memory_manager import SimpleMemoryManager
         
         # 创建记忆管理器
         manager = SimpleMemoryManager("test_user", "data/test.db")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests for vector-based memory retrieval."""
 
-from modules.simple_memory_manager import SimpleMemoryManager
+from src.core.memory_manager import SimpleMemoryManager
 
 
 def test_memory_retrieval_similarity():
