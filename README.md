@@ -7,11 +7,40 @@ Memory‑X 参考 Google Vertex AI Memory Bank 设计，提供统一的 `MemoryM
 - 向量相似检索：`search_memories` 通过余弦相似度召回相关记忆
 - 可插拔存储后端：`SQLiteMemoryStore` 开箱即用，`SpannerMemoryStore` 便于扩展
 - RESTful API：基于 Flask，可选 DashScope 集成
+- **🎨 现代化前端**：基于 React + TypeScript + Material-UI 的 Web 界面
 - 易于配置：支持环境变量或配置文件
 - 完善测试覆盖：单元测试与业务级场景测试
 - FHIR 风格的用药记忆：`medical_memory` 模块实现 Append/Update/Merge 规则
 
-## 📦 安装
+## 🚀 快速开始
+
+### 🖥️ 完整应用（推荐）
+```bash
+# 克隆项目并进入目录
+git clone https://github.com/ylouis83/memory-x.git
+cd memory-x
+
+# 一键启动前端+后端
+bash scripts/start_all.sh
+```
+
+访问地址：
+- 🌐 **前端界面**: http://localhost:5173
+- 🔌 **API 服务**: http://localhost:5000
+- 📊 **演示页面**: http://localhost:5000/demo/mem0
+
+### 🔧 分别启动
+```bash
+# 1. 后端服务
+bash scripts/setup_venv.sh
+source .venv/bin/activate
+bash scripts/run_api.sh
+
+# 2. 前端应用（新终端）
+bash scripts/run_frontend.sh
+```
+
+### 💻 仅后端 API
 ```bash
 # 克隆项目并进入目录
 git clone https://github.com/ylouis83/memory-x.git
@@ -43,7 +72,25 @@ mm.add_conversation(
 print(mm.search_memories("张三"))
 ```
 
-## 🗄️ 存储后端
+## 🎨 前端界面
+
+基于 React + TypeScript + Material-UI 构建的现代化 Web 界面，提供完整的记忆管理可视化体验：
+
+### 主要功能模块
+- **🧠 智能对话**: 与AI进行自然语言交互，自动记忆管理
+- **🔍 记忆浏览**: 查看短期记忆和搜索长期记忆  
+- **🏥 医疗决策**: FHIR风格的用药记忆合并分析
+- **👤 用户管理**: 多用户支持和配置文件管理
+- **📊 系统监控**: 实时API状态和性能指标
+
+### 界面特色
+- 🌙 明暗主题切换
+- 📱 响应式设计，支持移动端
+- 🚀 流畅的动画和交互体验
+- ♿ 无障碍设计支持
+
+详细文档请参考 [frontend/README.md](frontend/README.md)
+
 Memory-X 使用 `MemoryStore` 接口实现可插拔存储。
 
 | 后端 | 说明 |
@@ -98,7 +145,9 @@ bash scripts/test.sh
 
 - `scripts/setup_venv.sh`：创建并初始化虚拟环境
 - `scripts/test.sh`：运行测试
-- `scripts/run_api.sh`：启动最小 API
+- `scripts/run_api.sh`：启动后端 API 服务
+- `scripts/run_frontend.sh`：启动前端开发服务器
+- `scripts/start_all.sh`：一键启动前端+后端服务
 - `scripts/clean.sh`：清理缓存/日志/测试报告
 - `scripts/push.sh`：推送当前分支至远程
 
