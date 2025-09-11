@@ -5,6 +5,7 @@
 来源：online_consult
 """
 
+import os
 import sys
 import os
 import json
@@ -380,7 +381,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="在线咨询糖尿病乏力症状演示")
-    parser.add_argument("--api-key", default="sk-b70842d25c884aa9aa18955b00c24d37", 
+    parser.add_argument("--api-key", default=os.getenv('DASHSCOPE_API_KEY'), 
                        help="DashScope API密钥")
     parser.add_argument("--db-path", help="数据库路径")
     

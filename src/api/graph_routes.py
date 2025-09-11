@@ -6,6 +6,7 @@ Medical Knowledge Graph API Routes
 提供图谱构建、查询、分析的RESTful API接口
 """
 
+import os
 from flask import Blueprint, request, jsonify
 from typing import Dict, List
 import json
@@ -27,7 +28,9 @@ update_engine = GraphUpdateEngine(graph_manager)
 qwen_engine = None
 try:
     # 这里应该从环境变量或配置文件读取API密钥
-    qwen_api_key = "sk-b70842d25c884aa9aa18955b00c24d37"  # 临时硬编码，实际应从配置获取
+    qwen_api_key = os.getenv('DASHSCOPE_API_KEY')
+    if not qwen_api_key:
+        return jsonify({"error": "未设置DASHSCOPE_API_KEY环境变量"}), 500
     qwen_engine = QwenGraphUpdateEngine(graph_manager, qwen_api_key)
 except Exception as e:
     print(f"⚠️ Qwen3引擎初始化失败: {e}")

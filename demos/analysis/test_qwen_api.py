@@ -3,12 +3,15 @@
 测试Qwen3 API连接
 """
 
+import os
 import requests
 import json
 
 def test_qwen_api():
     """测试百炼API连接"""
-    api_key = "sk-b70842d25c884aa9aa18955b00c24d37"
+    api_key = os.getenv('DASHSCOPE_API_KEY')
+    if not api_key:
+        raise ValueError("请设置DASHSCOPE_API_KEY环境变量")
     base_url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
     
     headers = {

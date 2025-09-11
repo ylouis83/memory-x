@@ -5,6 +5,7 @@ Enhanced Qwen Graph Demo Script
 支持所有记忆查询和直接问题输入分析
 """
 
+import os
 import sys
 import os
 import sqlite3
@@ -968,7 +969,7 @@ class EnhancedQwenGraphDemo:
 def main():
     """主函数"""
     parser = argparse.ArgumentParser(description="增强版Qwen图谱演示")
-    parser.add_argument("--api-key", default="sk-b70842d25c884aa9aa18955b00c24d37", 
+    parser.add_argument("--api-key", default=os.getenv('DASHSCOPE_API_KEY'), 
                        help="DashScope API密钥")
     parser.add_argument("--db-path", help="数据库路径")
     parser.add_argument("--query", help="直接分析的问题")

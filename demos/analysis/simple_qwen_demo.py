@@ -3,6 +3,7 @@
 简化版Qwen3图谱更新演示
 """
 
+import os
 import sys
 import os
 import sqlite3
@@ -26,7 +27,7 @@ def create_simple_demo():
     try:
         # 初始化组件
         graph_manager = MedicalGraphManager(db_path)
-        qwen_engine = QwenGraphUpdateEngine(graph_manager, "sk-b70842d25c884aa9aa18955b00c24d37")
+        qwen_engine = QwenGraphUpdateEngine(graph_manager, os.getenv('DASHSCOPE_API_KEY') or "请设置DASHSCOPE_API_KEY环境变量")
         
         # 手动创建简单的测试数据
         conn = sqlite3.connect(db_path)

@@ -6,6 +6,7 @@ Medical Knowledge Graph Intelligent Update Engine with Qwen3
 专门处理感冒等短期疾病的图谱更新场景
 """
 
+import os
 import json
 import requests
 from datetime import datetime, timedelta
@@ -467,7 +468,9 @@ def demonstrate_qwen_update_engine():
     print("=" * 60)
     
     # 初始化组件
-    api_key = "sk-b70842d25c884aa9aa18955b00c24d37"
+    api_key = os.getenv('DASHSCOPE_API_KEY')
+    if not api_key:
+        raise ValueError("请设置DASHSCOPE_API_KEY环境变量")
     graph_manager = MedicalGraphManager("data/qwen_update_demo.db") 
     qwen_engine = QwenGraphUpdateEngine(graph_manager, api_key)
     

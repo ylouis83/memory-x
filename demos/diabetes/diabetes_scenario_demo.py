@@ -12,6 +12,7 @@
 患者信息：柳阳，40岁，有糖尿病家族史，青霉素过敏
 """
 
+import os
 import sys
 import os
 import sqlite3
@@ -432,13 +433,16 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="糖尿病诊断场景演示")
-    parser.add_argument("--api-key", default="sk-b70842d25c884aa9aa18955b00c24d37", 
+    parser.add_argument("--api-key", default=os.getenv('DASHSCOPE_API_KEY'), 
                        help="DashScope API密钥")
     parser.add_argument("--db-path", help="数据库路径")
     
     args = parser.parse_args()
     
     # 运行场景演示
+    if not args.api_key:
+        raise ValueError("请设置DASHSCOPE_API_KEY环境变量或使用--api-key参数")
+        
     demo = DiabetesScenarioDemo(args.api_key, args.db_path)
     demo.run_complete_scenario()
 

@@ -3,6 +3,7 @@
 简单的图谱糖尿病数据清除测试
 """
 
+import os
 import sys
 sys.path.append('/Users/louisliu/.cursor/memory-x')
 
@@ -13,7 +14,7 @@ def simple_test():
     print("=" * 50)
     
     # 初始化
-    demo = EnhancedQwenGraphDemo('sk-b70842d25c884aa9aa18955b00c24d37')
+    demo = EnhancedQwenGraphDemo(os.getenv('DASHSCOPE_API_KEY') or "请设置DASHSCOPE_API_KEY环境变量")
     
     # 1. 查看当前糖尿病数据
     print("1. 查看当前糖尿病相关数据...")

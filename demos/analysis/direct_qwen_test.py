@@ -4,6 +4,7 @@
 """
 
 import sys
+import os
 sys.path.append('/Users/louisliu/.cursor/memory-x')
 
 from src.core.qwen_update_engine import QwenAPIClient
@@ -14,7 +15,9 @@ def direct_qwen_test():
     print("🤖 直接测试Qwen3医疗分析功能")
     print("=" * 50)
     
-    api_key = "sk-b70842d25c884aa9aa18955b00c24d37"
+    api_key = os.getenv('DASHSCOPE_API_KEY')
+    if not api_key:
+        raise ValueError("请设置DASHSCOPE_API_KEY环境变量")
     client = QwenAPIClient(api_key)
     
     # 构建医疗场景分析提示
@@ -116,7 +119,9 @@ def test_batch_scenarios():
     print("\n🔬 测试多种医疗场景")
     print("=" * 40)
     
-    api_key = "sk-b70842d25c884aa9aa18955b00c24d37"
+    api_key = os.getenv('DASHSCOPE_API_KEY')
+    if not api_key:
+        raise ValueError("请设置DASHSCOPE_API_KEY环境变量")
     client = QwenAPIClient(api_key)
     
     scenarios = [

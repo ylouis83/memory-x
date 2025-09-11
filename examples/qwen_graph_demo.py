@@ -5,6 +5,7 @@ Enhanced Medical Knowledge Graph Update Demo with Qwen3
 支持所有记忆查询和直接问题输入分析
 """
 
+import os
 import sys
 import os
 import sqlite3
@@ -343,7 +344,9 @@ def demonstrate_qwen_analysis():
     print("=" * 60)
     
     # 配置
-    api_key = "sk-b70842d25c884aa9aa18955b00c24d37"
+    api_key = os.getenv('DASHSCOPE_API_KEY')
+    if not api_key:
+        raise ValueError("请设置DASHSCOPE_API_KEY环境变量")
     db_path = "/Users/louisliu/.cursor/memory-x/data/qwen_demo.db"
     user_id = "liuyang_qwen_demo"
     
@@ -432,7 +435,9 @@ def test_multiple_scenarios():
     print("\n🔬 测试多种医疗场景")
     print("=" * 40)
     
-    api_key = "sk-b70842d25c884aa9aa18955b00c24d37"
+    api_key = os.getenv('DASHSCOPE_API_KEY')
+    if not api_key:
+        raise ValueError("请设置DASHSCOPE_API_KEY环境变量")
     db_path = "/Users/louisliu/.cursor/memory-x/data/qwen_multi_demo.db"
     
     # 确保数据目录存在

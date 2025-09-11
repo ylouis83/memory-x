@@ -3,6 +3,7 @@
 直接测试糖尿病关系创建功能
 """
 
+import os
 import sys
 sys.path.append('/Users/louisliu/.cursor/memory-x')
 
@@ -14,7 +15,9 @@ def test_diabetes_relation_creation():
     print("=" * 50)
     
     # 初始化组件
-    api_key = "sk-b70842d25c884aa9aa18955b00c24d37"
+    api_key = os.getenv('DASHSCOPE_API_KEY')
+    if not api_key:
+        raise ValueError("请设置DASHSCOPE_API_KEY环境变量")
     graph_manager = MedicalGraphManager("/Users/louisliu/.cursor/memory-x/data/diabetes_test.db")
     qwen_engine = QwenGraphUpdateEngine(graph_manager, api_key)
     

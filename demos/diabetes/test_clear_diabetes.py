@@ -3,6 +3,7 @@
 测试删除糖尿病相关记忆功能
 """
 
+import os
 import sys
 sys.path.append('/Users/louisliu/.cursor/memory-x')
 
@@ -13,7 +14,7 @@ def test_clear_diabetes_memories():
     print("=" * 50)
     
     # 初始化演示系统
-    demo = EnhancedQwenGraphDemo('sk-b70842d25c884aa9aa18955b00c24d37')
+    demo = EnhancedQwenGraphDemo(os.getenv('DASHSCOPE_API_KEY') or "请设置DASHSCOPE_API_KEY环境变量")
     
     # 查看删除前的统计
     before_stats = demo.memory_manager.get_memory_stats()

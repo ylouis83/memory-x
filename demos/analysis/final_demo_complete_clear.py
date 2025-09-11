@@ -3,6 +3,7 @@
 完整演示：清除短期记忆和图谱中关于糖尿病的全部数据
 """
 
+import os
 import sys
 sys.path.append('/Users/louisliu/.cursor/memory-x')
 
@@ -15,7 +16,7 @@ def complete_diabetes_clear_demo():
     print("=" * 60)
     
     # 初始化演示系统
-    demo = EnhancedQwenGraphDemo('sk-b70842d25c884aa9aa18955b00c24d37')
+    demo = EnhancedQwenGraphDemo(os.getenv('DASHSCOPE_API_KEY') or "请设置DASHSCOPE_API_KEY环境变量")
     
     # 第一部分：清除短期记忆中的糖尿病数据
     print("\n📝 第一部分：清除短期记忆中的糖尿病数据")

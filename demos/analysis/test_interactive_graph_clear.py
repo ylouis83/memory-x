@@ -3,6 +3,7 @@
 测试交互式图谱清除功能
 """
 
+import os
 import sys
 sys.path.append('/Users/louisliu/.cursor/memory-x')
 
@@ -13,7 +14,7 @@ def test_interactive_graph_clear():
     print("=" * 60)
     
     # 初始化演示系统
-    demo = EnhancedQwenGraphDemo('sk-b70842d25c884aa9aa18955b00c24d37')
+    demo = EnhancedQwenGraphDemo(os.getenv('DASHSCOPE_API_KEY') or "请设置DASHSCOPE_API_KEY环境变量")
     
     # 1. 先添加一些糖尿病数据用于测试
     print("📝 1. 准备测试数据...")
