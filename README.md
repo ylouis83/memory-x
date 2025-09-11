@@ -94,6 +94,7 @@ bash scripts/start_all.sh
 
 ## 🔗 演示和集成
 
+- **Mem0集成**: 本项目集成了 [mem0](https://github.com/mem0ai/mem0) 作为向量化记忆存储后端
 - **糖尿病诊断演示**: `python demos/diabetes/diabetes_scenario_demo.py`
 - **通用医疗咨询**: `python demos/general_medical_demo.py`
 - **在线问诊场景**: `python demos/diabetes/online_consult_diabetes_fatigue_demo.py`
