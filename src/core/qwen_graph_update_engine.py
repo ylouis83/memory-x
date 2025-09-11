@@ -7,12 +7,19 @@ Medical Knowledge Graph Intelligent Update Engine with Qwen3
 """
 
 import os
+import sys
 import json
-import requests
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
+
+# 导入统一的百烼API客户端
+sys_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if sys_path not in sys.path:
+    sys.path.insert(0, sys_path)
+
+from configs.dashscope_client import DashScopeClientFactory, MedicalDashScopeClient
 
 from .medical_graph_manager import MedicalGraphManager
 
@@ -38,13 +45,23 @@ class UpdateDecision:
     suggested_relations: Optional[List[Dict[str, Any]]] = None  # 新增：建议创建的关系
 
 class QwenGraphUpdateEngine:
-    """基于Qwen3的智能图谱更新引擎"""
+    """基于Qwen3的智能图谱更新引擎（使用统一客户端）"""
     
-    def __init__(self, graph_manager: MedicalGraphManager, api_key: str):
+    def __init__(self, graph_manager: MedicalGraphManager, api_key: str = None):
         self.graph_manager = graph_manager
-        self.api_key = api_key
-        self.api_url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
-        self.model = "qwen-plus"  # 使用Qwen3模型
+        
+        # 使用统一的医疗专用客户端
+        try:
+            self.qwen_client = DashScopeClientFactory.create_medical_client(
+                api_key=api_key,
+                model="qwen-plus",
+                max_tokens=2000,
+                temperature=0.1
+            )
+            print("✅ Qwen3智能图谱更新引擎初始化完成（使用统一医疗客户端）")
+        except Exception as e:
+            print(f"❌ 客户端初始化失败: {e}")
+            raise
         
     def analyze_update_scenario(self, current_symptoms: List[str], user_id: str, 
                               context: str = "") -> UpdateDecision:
@@ -162,46 +179,17 @@ class QwenGraphUpdateEngine:
         return medical_context
     
     def _call_qwen_api(self, medical_context: str) -> str:
-        """调用百炼API Qwen3模型"""
-        
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "model": self.model,
-            "input": {
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "你是一位资深的医疗AI专家，专门负责医疗知识图谱的智能更新分析。\n\n**特别重要**：你必须高度重视家族史，特别是糖尿病家族史。头晕是糖尿病的常见早期症状之一，40岁中年男性有糖尿病家族史时，出现头晕症状应该强烈考虑糖尿病风险。\n\n**关键决策规则**：\n1. 如果患者有糖尿病家族史且出现头晕症状，**必须**返回 'create_diabetes_relation'\n2. 不要返回 'create_new'，而要优先考虑糖尿病关联\n3. 糖尿病家族史 + 头晕 = 高优先级的糖尿病风险评估\n\n**糖尿病诊断思路**：\n1. 家族史 + 年龄 + 症状 = 高风险组合\n2. 头晕可能由血糖异常（高血糖或低血糖）引起\n3. 应该创建糖尿病风险关系，而不是独立症状\n4. 应该建议进行血糖检测和糖尿病筛查"
-                    },
-                    {
-                        "role": "user", 
-                        "content": medical_context
-                    }
-                ]
-            },
-            "parameters": {
-                "result_format": "message",
-                "max_tokens": 2000,
-                "temperature": 0.1,  # 较低的温度确保稳定性
-                "top_p": 0.8
-            }
-        }
+        """调用百炼API Qwen3模型（使用统一客户端）"""
         
         try:
-            response = requests.post(self.api_url, headers=headers, json=payload, timeout=30)
-            response.raise_for_status()
+            # 使用统一客户端生成响应
+            response = self.qwen_client.generate_response(
+                medical_context,
+                max_tokens=2000,
+                temperature=0.1
+            )
+            return response
             
-            result = response.json()
-            
-            if result.get("output") and result["output"].get("choices"):
-                return result["output"]["choices"][0]["message"]["content"]
-            else:
-                return self._fallback_analysis(medical_context)
-                
         except Exception as e:
             print(f"调用Qwen API失败: {e}")
             return self._fallback_analysis(medical_context)

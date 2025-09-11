@@ -58,6 +58,43 @@ Memory-X 是一个专为医疗AI场景设计的智能记忆管理系统，参考
 - **Cloud Spanner**: 分布式数据库支持
 - **Mem0**: 向量化记忆存储集成
 
+## 🤖 百烼API统一客户端配置
+
+项目使用统一的百烼API客户端配置，提供标准化的AI模型访问能力：
+
+### 客户端类型
+- **StandardDashScopeClient**: 标准通用客户端
+- **MedicalDashScopeClient**: 医疗专用客户端（默认）
+- **StreamingDashScopeClient**: 流式处理客户端
+
+### 快速使用
+```python
+from configs.dashscope_client import DashScopeClientFactory, quick_ask
+
+# 创建医疗专用客户端
+client = DashScopeClientFactory.create_medical_client()
+
+# 快速提问
+answer = quick_ask("糖尿病的早期症状有哪些？")
+
+# 医疗咨询
+from configs.dashscope_client import medical_consultation
+result = medical_consultation(["头晕", "乏力", "多饮"])
+
+# 药物安全检查
+from configs.dashscope_client import check_medication_safety
+safety = check_medication_safety("二甲双胍")
+```
+
+### 环境变量配置
+```bash
+# 设置百烼API密钥
+export DASHSCOPE_API_KEY=your-api-key-here
+
+# 或创建.env文件
+echo "DASHSCOPE_API_KEY=your-api-key-here" > .env
+```
+
 ## 🚀 快速开始
 
 ### 🖥️ 完整应用（推荐）

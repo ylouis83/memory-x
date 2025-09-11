@@ -2,15 +2,25 @@
 """
 基于Qwen3模型的智能医疗知识图谱更新引擎
 Enhanced Medical Knowledge Graph Update Engine with Qwen3 Model
+
+使用统一的百炼API客户端配置，专为柳阳（40岁，糖尿病遗传病史，青霉素过敏）优化
 """
 
+import os
 import json
 import sqlite3
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, asdict
-import requests
 import time
+
+# 导入统一的百炼API客户端
+sys_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if sys_path not in sys.path:
+    import sys
+    sys.path.insert(0, sys_path)
+
+from configs.dashscope_client import DashScopeClientFactory, BaseDashScopeClient
 
 from .graph_update_engine import (
     GraphUpdateEngine, DiseaseProfile, UpdateDecision, UpdateAction, DiseaseType
@@ -18,63 +28,23 @@ from .graph_update_engine import (
 from .medical_graph_manager import MedicalGraphManager
 
 
-class QwenAPIClient:
-    """百炼API Qwen3模型客户端"""
-    
-    def __init__(self, api_key: str):
-        self.api_key = api_key
-        self.base_url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
-        self.model = "qwen-max"
-        
-    def generate_response(self, prompt: str, max_tokens: int = 2000) -> str:
-        """调用Qwen3模型生成响应"""
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "model": self.model,
-            "input": {
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "你是专业的医疗AI助手，负责医疗知识图谱的智能更新分析。"
-                    },
-                    {
-                        "role": "user", 
-                        "content": prompt
-                    }
-                ]
-            },
-            "parameters": {
-                "max_tokens": max_tokens,
-                "temperature": 0.1,
-                "top_p": 0.8
-            }
-        }
-        
-        try:
-            response = requests.post(self.base_url, headers=headers, json=payload, timeout=30)
-            response.raise_for_status()
-            
-            result = response.json()
-            if "output" in result and "text" in result["output"]:
-                return result["output"]["text"].strip()
-            else:
-                raise Exception(f"API响应格式异常: {result}")
-                
-        except Exception as e:
-            raise Exception(f"API调用失败: {e}")
-
-
 class QwenGraphUpdateEngine(GraphUpdateEngine):
-    """基于Qwen3的增强图谱更新引擎"""
+    """基于Qwen3的增强图谱更新引擎（使用统一客户端配置）"""
     
-    def __init__(self, graph_manager: MedicalGraphManager, api_key: str):
+    def __init__(self, graph_manager: MedicalGraphManager, api_key: str = None):
         super().__init__(graph_manager)
-        self.qwen_client = QwenAPIClient(api_key)
-        print("✅ Qwen3增强图谱更新引擎初始化完成")
+        
+        # 使用统一的客户端工厂创建医疗专用客户端
+        try:
+            self.qwen_client = DashScopeClientFactory.create_medical_client(
+                api_key=api_key,
+                max_tokens=2000,
+                temperature=0.1
+            )
+            print("✅ Qwen3增强图谱更新引擎初始化完成（使用统一医疗客户端）")
+        except Exception as e:
+            print(f"❌ 客户端初始化失败: {e}")
+            raise
     
     def analyze_with_ai(self, current_symptoms: List[str], user_id: str, 
                        context: str = "") -> UpdateDecision:
