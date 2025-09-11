@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../types/memory';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import type { User } from '../types/memory';
 
 interface UserContextType {
   currentUser: User | null;

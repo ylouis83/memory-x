@@ -24,7 +24,7 @@ import {
   AccountCircle as AccountIcon,
 } from '@mui/icons-material';
 import { useUser } from '../contexts/UserContext';
-import { User } from '../types/memory';
+
 
 const UserSelector: React.FC = () => {
   const { currentUser, setCurrentUser, users, addUser } = useUser();

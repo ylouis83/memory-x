@@ -6,7 +6,6 @@ import {
   Typography,
   TextField,
   Button,
-  Grid,
   Chip,
   Alert,
   CircularProgress,
@@ -19,7 +18,7 @@ import {
 import { Send as SendIcon, Psychology as BrainIcon } from '@mui/icons-material';
 import { memoryApi } from '../services/api';
 import { useUser } from '../contexts/UserContext';
-import { ChatResponse, MemoryOperation } from '../types/memory';
+import type { ChatResponse, MemoryOperation } from '../types/memory';
 
 const ChatInterface: React.FC = () => {
   const { currentUser } = useUser();
@@ -52,16 +51,16 @@ const ChatInterface: React.FC = () => {
     }
   };
 
-  const getIntentColor = (intent: string) => {
-    const colors: Record<string, 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success'> = {
-      'EMERGENCY': 'error',
-      'REQUEST_MEDICINE': 'warning',
-      'PRESCRIPTION_INQUIRY': 'info',
-      'INTRODUCE': 'success',
-      'NORMAL_CONSULTATION': 'primary',
-    };
-    return colors[intent] || 'default';
-  };
+  // const getIntentColor = (intent: string) => {
+  //   const colors: Record<string, 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success'> = {
+  //     'EMERGENCY': 'error',
+  //     'REQUEST_MEDICINE': 'warning',
+  //     'PRESCRIPTION_INQUIRY': 'info',
+  //     'INTRODUCE': 'success',
+  //     'NORMAL_CONSULTATION': 'primary',
+  //   };
+  //   return colors[intent] || 'default';
+  // };
 
   const renderMemoryOperation = (operation: MemoryOperation) => {
     const icons: Record<string, string> = {

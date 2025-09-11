@@ -39,6 +39,10 @@
         color: #666;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
+      /* 隐藏loading动画当React加载完成 */
+      .app-loaded .loading {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -49,5 +53,15 @@
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // 超时清除加载动画，防止React加载失败
+      setTimeout(() => {
+        const loadingElement = document.querySelector('.loading');
+        if (loadingElement) {
+          loadingElement.style.display = 'none';
+          console.warn('React app loading timeout, hiding loading animation');
+        }
+      }, 10000);
+    </script>
   </body>
 </html>

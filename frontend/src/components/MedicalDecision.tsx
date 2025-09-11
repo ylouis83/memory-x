@@ -22,7 +22,7 @@ import {
   CheckCircle as SuccessIcon,
 } from '@mui/icons-material';
 import { memoryApi } from '../services/api';
-import { MedicalEntry, MedicalDecisionRequest, MedicalDecisionResponse } from '../types/memory';
+import type { MedicalEntry, MedicalDecisionRequest, MedicalDecisionResponse } from '../types/memory';
 
 const MedicalDecision: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -350,7 +350,7 @@ const MedicalDecision: React.FC = () => {
                     <Chip
                       label={result.action}
                       color={getActionColor(result.action)}
-                      size="large"
+                      size="medium"
                       sx={{ fontSize: '1.1rem', fontWeight: 'bold', mb: 1 }}
                     />
                     <Typography variant="body2" color="text.secondary">

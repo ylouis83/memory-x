@@ -119,19 +119,54 @@ class SQLiteMemoryStore(MemoryStore):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT content, embedding FROM memories WHERE user_id = ?",
+            """
+            SELECT content, embedding, message_type, importance, entities, intent, timestamp 
+            FROM memories WHERE user_id = ?
+            """,
             (user_id,),
         )
         rows = cursor.fetchall()
         query_vec = self._embed(query)
         results: List[Dict] = []
-        for content, emb_text in rows:
+        
+        # 按对话对组织记忆
+        conversation_pairs = {}
+        for content, emb_text, message_type, importance, entities_str, intent, timestamp in rows:
             try:
                 emb = json.loads(emb_text) if emb_text else []
             except json.JSONDecodeError:
                 emb = []
             score = self._cosine(query_vec, emb)
-            results.append({"content": content, "score": score})
+            
+            # 按时间戳分组
+            if timestamp not in conversation_pairs:
+                conversation_pairs[timestamp] = {'user': None, 'ai': None, 'score': 0, 'importance': importance, 'entities': entities_str, 'intent': intent}
+            
+            if message_type == 'user':
+                conversation_pairs[timestamp]['user'] = content
+                conversation_pairs[timestamp]['score'] = max(conversation_pairs[timestamp]['score'], score)
+            elif message_type == 'ai':
+                conversation_pairs[timestamp]['ai'] = content
+                conversation_pairs[timestamp]['score'] = max(conversation_pairs[timestamp]['score'], score)
+        
+        # 转换为前端期望的格式
+        for timestamp, pair in conversation_pairs.items():
+            if pair['user'] and pair['ai']:  # 只返回完整的对话
+                try:
+                    entities = json.loads(pair['entities']) if pair['entities'] else {}
+                except json.JSONDecodeError:
+                    entities = {}
+                
+                results.append({
+                    "user_message": pair['user'],
+                    "ai_response": pair['ai'],
+                    "timestamp": timestamp,
+                    "importance": pair['importance'],
+                    "entities": entities,
+                    "intent": pair['intent'],
+                    "score": pair['score']
+                })
+        
         conn.close()
         results.sort(key=lambda x: x["score"], reverse=True)
         return results[:top_k]

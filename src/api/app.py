@@ -8,6 +8,7 @@ Memory-X API 应用主文件
 
 import os
 import sys
+from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
 from loguru import logger
@@ -27,6 +28,13 @@ try:
     DASHSCOPE_AVAILABLE = True
 except ImportError:
     DASHSCOPE_AVAILABLE = False
+
+# 导入医疗知识图谱路由
+try:
+    from src.api.graph_routes import graph_bp
+    GRAPH_AVAILABLE = True
+except ImportError:
+    GRAPH_AVAILABLE = False
 
 
 def create_app(config_name: str = None):
@@ -106,8 +114,34 @@ def create_app(config_name: str = None):
                 # 搜索相关记忆（长程检索）
                 memories = memory_manager.retrieve_memories(query, top_k=limit)
             else:
-                # 获取最近记忆
-                memories = list(memory_manager.short_term_memory)[-limit:]
+                # 获取最近记忆（短期记忆）
+                short_term_data = list(memory_manager.short_term_memory)[-limit:]
+                memories = []
+                
+                # 转换短期记忆为统一格式
+                for item in short_term_data:
+                    if isinstance(item, dict):
+                        # 如果已经是字典格式，直接使用
+                        memories.append({
+                            "user_message": item.get('user_message', str(item)),
+                            "ai_response": item.get('ai_response', ''),
+                            "timestamp": item.get('timestamp', datetime.now().isoformat()),
+                            "importance": item.get('importance', 1),
+                            "entities": item.get('entities', {}),
+                            "intent": item.get('intent', ''),
+                            "score": 1.0
+                        })
+                    else:
+                        # 如果是字符串，转换为统一格式
+                        memories.append({
+                            "user_message": str(item),
+                            "ai_response": "",
+                            "timestamp": datetime.now().isoformat(),
+                            "importance": 1,
+                            "entities": {},
+                            "intent": "",
+                            "score": 1.0
+                        })
             
             return jsonify({
                 'success': True,
@@ -316,6 +350,13 @@ def create_app(config_name: str = None):
         logger.info("DashScope API路由已注册")
     else:
         logger.warning("DashScope API路由未注册，请检查依赖")
+    
+    # 注册医疗知识图谱路由
+    if GRAPH_AVAILABLE:
+        app.register_blueprint(graph_bp)
+        logger.info("医疗知识图谱API路由已注册")
+    else:
+        logger.warning("医疗知识图谱API路由未注册，请检查依赖")
 
     @app.route('/demo/mem0', methods=['GET'])
     def demo_mem0():

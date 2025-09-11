@@ -6,19 +6,17 @@ import {
   Typography,
   TextField,
   Button,
-  Grid,
   List,
   ListItem,
   ListItemText,
-  ListItemSecondary,
   Chip,
   Alert,
   CircularProgress,
   Paper,
   Tab,
   Tabs,
-  Divider,
   IconButton,
+  Grid,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -30,7 +28,7 @@ import {
 } from '@mui/icons-material';
 import { memoryApi } from '../services/api';
 import { useUser } from '../contexts/UserContext';
-import { Memory, MemoryStats } from '../types/memory';
+import type { Memory, MemoryStats } from '../types/memory';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
@@ -53,6 +51,8 @@ const MemoryBrowser: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  console.log('MemoryBrowser: Rendering with currentUser:', currentUser);
+  
   // 短期记忆
   const [shortTermMemories, setShortTermMemories] = useState<Memory[]>([]);
   
@@ -67,10 +67,14 @@ const MemoryBrowser: React.FC = () => {
     if (!currentUser) return;
     
     setLoading(true);
+    setError(null);
     try {
+      console.log('Loading short term memories for user:', currentUser.id);
       const response = await memoryApi.getMemories(currentUser.id, '', 10);
-      setShortTermMemories(response.memories);
+      console.log('Short term memories response:', response);
+      setShortTermMemories(response.memories || []);
     } catch (err: any) {
+      console.error('Failed to load short term memories:', err);
       setError(err.response?.data?.error || '加载短期记忆失败');
     } finally {
       setLoading(false);
@@ -97,9 +101,12 @@ const MemoryBrowser: React.FC = () => {
     if (!currentUser) return;
     
     try {
+      console.log('Loading memory stats for user:', currentUser.id);
       const response = await memoryApi.getMemoryStats(currentUser.id);
-      setMemoryStats(response.stats);
+      console.log('Memory stats response:', response);
+      setMemoryStats(response.stats || null);
     } catch (err: any) {
+      console.error('Failed to load memory stats:', err);
       setError(err.response?.data?.error || '加载统计失败');
     }
   };
@@ -111,7 +118,7 @@ const MemoryBrowser: React.FC = () => {
     }
   }, [currentUser]);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     setError(null);
   };
@@ -136,54 +143,68 @@ const MemoryBrowser: React.FC = () => {
     return '普通';
   };
 
-  const renderMemoryItem = (memory: Memory, index: number) => (
-    <ListItem key={index} divider>
-      <ListItemText
-        primary={
-          <Box>
-            <Typography variant="body1" component="div">
-              <strong>用户：</strong> {memory.user_message}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              <strong>AI：</strong> {memory.ai_response}
-            </Typography>
-          </Box>
-        }
-        secondary={
-          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-            <Chip
-              size="small"
-              icon={<TimeIcon />}
-              label={format(new Date(memory.timestamp), 'MM-dd HH:mm', { locale: zhCN })}
-              variant="outlined"
-            />
-            <Chip
-              size="small"
-              icon={<ImportanceIcon />}
-              label={getImportanceLabel(memory.importance)}
-              color={getImportanceColor(memory.importance)}
-            />
-            {memory.intent && (
-              <Chip
-                size="small"
-                label={memory.intent}
-                color="secondary"
-                variant="outlined"
-              />
-            )}
-            {memory.entities && Object.keys(memory.entities).length > 0 && (
-              <Chip
-                size="small"
-                label={`实体: ${Object.keys(memory.entities).length}`}
-                color="info"
-                variant="outlined"
-              />
-            )}
-          </Box>
-        }
-      />
-    </ListItem>
-  );
+  const renderMemoryItem = (memory: Memory, index: number) => {
+    try {
+      return (
+        <ListItem key={index} divider>
+          <ListItemText
+            primary={
+              <Box>
+                <Typography variant="body1" component="div">
+                  <strong>用户：</strong> {memory.user_message || '未知消息'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  <strong>AI：</strong> {memory.ai_response || '无回复'}
+                </Typography>
+              </Box>
+            }
+            secondary={
+              <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+                <Chip
+                  size="small"
+                  icon={<TimeIcon />}
+                  label={memory.timestamp ? format(new Date(memory.timestamp), 'MM-dd HH:mm', { locale: zhCN }) : '未知时间'}
+                  variant="outlined"
+                />
+                <Chip
+                  size="small"
+                  icon={<ImportanceIcon />}
+                  label={getImportanceLabel(memory.importance || 1)}
+                  color={getImportanceColor(memory.importance || 1)}
+                />
+                {memory.intent && (
+                  <Chip
+                    size="small"
+                    label={memory.intent}
+                    color="secondary"
+                    variant="outlined"
+                  />
+                )}
+                {memory.entities && Object.keys(memory.entities).length > 0 && (
+                  <Chip
+                    size="small"
+                    label={`实体: ${Object.keys(memory.entities).length}`}
+                    color="info"
+                    variant="outlined"
+                  />
+                )}
+              </Box>
+            }
+          />
+        </ListItem>
+      );
+    } catch (err) {
+      console.error('Error rendering memory item:', err, memory);
+      return (
+        <ListItem key={index} divider>
+          <ListItemText
+            primary="记忆项渲染错误"
+            secondary="请检查数据格式"
+          />
+        </ListItem>
+      );
+    }
+  };
 
   return (
     <Card>
@@ -202,6 +223,13 @@ const MemoryBrowser: React.FC = () => {
             </IconButton>
           </Box>
         </Box>
+
+        {/* 用户检查 */}
+        {!currentUser && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            请先在“用户管理”页面选择一个用户
+          </Alert>
+        )}
 
         {/* 记忆统计 */}
         {memoryStats && (

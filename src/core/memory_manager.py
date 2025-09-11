@@ -182,6 +182,89 @@ class SimpleMemoryManager:
         """清空会话"""
         self.short_term_memory.clear()
         self.working_memory.clear()
+    
+    def remove_diabetes_related_memories(self):
+        """删除短期记忆中关于糖尿病的全部内容"""
+        diabetes_keywords = ['糖尿病', '血糖', '胰岛素', '家族史', '糖尿病风险', 'diabetes']
+        
+        # 过滤短期记忆
+        filtered_memories = []
+        removed_count = 0
+        
+        for memory_item in self.short_term_memory:
+            is_diabetes_related = False
+            
+            # 检查用户消息
+            user_message = memory_item.get('user_message', '')
+            ai_response = memory_item.get('ai_response', '')
+            entities = memory_item.get('entities', {})
+            
+            # 检查消息内容是否包含糖尿病关键词
+            for keyword in diabetes_keywords:
+                if (keyword in user_message or 
+                    keyword in ai_response):
+                    is_diabetes_related = True
+                    break
+            
+            # 检查实体是否包含糖尿病相关内容
+            if not is_diabetes_related and entities:
+                for entity_type, entity_list in entities.items():
+                    if isinstance(entity_list, list):
+                        for entity_info in entity_list:
+                            entity_text = entity_info[0] if isinstance(entity_info, (list, tuple)) else str(entity_info)
+                            for keyword in diabetes_keywords:
+                                if keyword in entity_text:
+                                    is_diabetes_related = True
+                                    break
+                            if is_diabetes_related:
+                                break
+                    if is_diabetes_related:
+                        break
+            
+            if not is_diabetes_related:
+                filtered_memories.append(memory_item)
+            else:
+                removed_count += 1
+        
+        # 更新短期记忆
+        self.short_term_memory.clear()
+        for memory in filtered_memories:
+            self.short_term_memory.append(memory)
+        
+        # 清理工作记忆中的糖尿病相关内容
+        diabetes_working_keys = []
+        for key, value in self.working_memory.items():
+            if isinstance(value, set):
+                # 检查set中的元素
+                filtered_set = set()
+                for item in value:
+                    is_diabetes_item = False
+                    for keyword in diabetes_keywords:
+                        if keyword in str(item):
+                            is_diabetes_item = True
+                            break
+                    if not is_diabetes_item:
+                        filtered_set.add(item)
+                
+                if len(filtered_set) != len(value):
+                    self.working_memory[key] = filtered_set
+            elif isinstance(value, str):
+                # 检查字符串值
+                for keyword in diabetes_keywords:
+                    if keyword in value:
+                        diabetes_working_keys.append(key)
+                        break
+        
+        # 删除糖尿病相关的工作记忆键
+        for key in diabetes_working_keys:
+            del self.working_memory[key]
+        
+        return {
+            'removed_short_term': removed_count,
+            'removed_working_keys': len(diabetes_working_keys),
+            'remaining_short_term': len(self.short_term_memory),
+            'remaining_working_memory': len(self.working_memory)
+        }
 
 class SimpleMemoryIntegratedAI:
     """简化版记忆集成AI"""
@@ -215,7 +298,7 @@ class SimpleMemoryIntegratedAI:
             # 生成回复
             ai_response = self._generate_response(user_message, intent, entities)
             if retrieved:
-                ai_response = f"我记得你提到过：{retrieved[0]['content']}。" + ai_response
+                ai_response = f"我记得你提到过：{retrieved[0]['user_message']}。" + ai_response
 
             # 存储对话
             memory_manager.add_conversation(
@@ -254,26 +337,67 @@ class SimpleMemoryIntegratedAI:
             return 'NORMAL_CONSULTATION'
     
     def _recognize_entities(self, message: str) -> Dict:
-        """简化实体识别"""
+        """增强实体识别"""
         entities = {}
         
-        medicines = ['布洛芬', '阿司匹林', '感冒药']
-        symptoms = ['头痛', '发热', '咳嗽']
+        # 药物实体
+        medicines = ['布洛芬', '阿司匹林', '感冒药', '青霉素', '氨氯地平', '胰岛素']
         
+        # 症状实体
+        symptoms = ['头痛', '发热', '咳嗽', '高血压', '糖尿病', '过敏']
+        
+        # 疾病实体
+        diseases = ['糖尿病', '高血压', '心脏病', '哮喘', '肝病', '肾病']
+        
+        # 过敏相关
+        allergies = ['过敏', '青霉素过敏', '花粉过敏', '食物过敏']
+        
+        # 年龄相关（简单匹配）
+        import re
+        age_pattern = r'(\d+)岁|今年(\d+)'
+        age_match = re.search(age_pattern, message)
+        if age_match:
+            age = age_match.group(1) or age_match.group(2)
+            entities['AGE'] = [(f"{age}岁", age_match.start(), age_match.end())]
+        
+        # 姓名相关（简单识别）
+        name_patterns = ['我叫', '我是', '我的名字是']
+        for pattern in name_patterns:
+            if pattern in message:
+                start_idx = message.find(pattern) + len(pattern)
+                # 查找后面的中文字符作为姓名
+                name_match = re.search(r'[\u4e00-\u9fff]+', message[start_idx:start_idx+10])
+                if name_match:
+                    name = name_match.group()
+                    entities['PERSON'] = [(name, start_idx + name_match.start(), start_idx + name_match.end())]
+                    break
+        
+        # 遗传病史
+        if '遗传病史' in message or '家族史' in message:
+            entities['FAMILY_HISTORY'] = [('遗传病史', message.find('遗传病史'), message.find('遗传病史') + 4)]
+        
+        # 检查各类实体
         found_medicines = [m for m in medicines if m in message]
         found_symptoms = [s for s in symptoms if s in message]
+        found_diseases = [d for d in diseases if d in message]
+        found_allergies = [a for a in allergies if a in message]
         
         if found_medicines:
-            entities['MEDICINE'] = [(m, 0, len(m)) for m in found_medicines]
+            entities['MEDICINE'] = [(m, message.find(m), message.find(m) + len(m)) for m in found_medicines]
         if found_symptoms:
-            entities['SYMPTOM'] = [(s, 0, len(s)) for s in found_symptoms]
+            entities['SYMPTOM'] = [(s, message.find(s), message.find(s) + len(s)) for s in found_symptoms]
+        if found_diseases:
+            entities['DISEASE'] = [(d, message.find(d), message.find(d) + len(d)) for d in found_diseases]
+        if found_allergies:
+            entities['ALLERGY'] = [(a, message.find(a), message.find(a) + len(a)) for a in found_allergies]
         
         return entities
     
     def _evaluate_importance(self, intent: str, entities: Dict) -> int:
-        """评估重要性"""
+        """增强重要性评估"""
         importance = 1
         
+        # 根据意图评估
         if intent == 'EMERGENCY':
             importance = 4
         elif intent in ['REQUEST_MEDICINE', 'REQUEST_REAL_DOCTOR']:
@@ -281,8 +405,19 @@ class SimpleMemoryIntegratedAI:
         elif intent == 'PRESCRIPTION_INQUIRY':
             importance = 2
         
+        # 根据实体类型调整重要性
         if entities:
-            importance += 1
+            # 个人信息相关（高重要性）
+            if 'PERSON' in entities or 'AGE' in entities:
+                importance = max(importance, 3)
+            
+            # 医疗相关信息（高重要性）
+            if any(key in entities for key in ['DISEASE', 'ALLERGY', 'FAMILY_HISTORY']):
+                importance = max(importance, 4)
+            
+            # 药物和症状（中等重要性）
+            if any(key in entities for key in ['MEDICINE', 'SYMPTOM']):
+                importance = max(importance, 2)
         
         return min(4, importance)
     

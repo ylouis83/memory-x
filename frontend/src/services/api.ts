@@ -1,6 +1,5 @@
 import axios from 'axios';
-import {
-  Memory,
+import type {
   MemoryStats,
   ChatResponse,
   SearchMemoryResponse,

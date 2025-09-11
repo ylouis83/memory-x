@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ThemeProvider,
   createTheme,
@@ -45,6 +45,17 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const isMobile = useMediaQuery('(max-width:600px)');
 
+  // 隐藏加载动画
+  useEffect(() => {
+    const loadingElement = document.querySelector('.loading');
+    if (loadingElement) {
+      loadingElement.style.display = 'none';
+      console.log('React app loaded, hiding loading animation');
+    }
+    // 添加app-loaded类
+    document.body.classList.add('app-loaded');
+  }, []);
+
   const theme = createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
@@ -81,7 +92,7 @@ function App() {
     },
   });
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
