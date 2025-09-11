@@ -12,7 +12,7 @@ from examples.enhanced_qwen_graph_demo import EnhancedQwenGraphDemo
 def complete_diabetes_clear_demo():
     print("🎉 完整糖尿病数据清除演示")
     print("=" * 60)
-    print("柳阳（40岁，有糖尿病家族史，青霉素过敏）")
+    print("演示患者（成年人，有糖尿病家族史，青霉素过敏）")
     print("=" * 60)
     
     # 初始化演示系统
@@ -175,7 +175,7 @@ def complete_diabetes_clear_demo():
     
     if memory_success and graph_success and protection_success:
         print(f"\n🎉 完整清除功能测试 100% 成功！")
-        print(f"   柳阳的医疗系统中关于糖尿病的全部数据已被安全清除")
+        print(f"   演示患者的医疗系统中关于糖尿病的全部数据已被安全清除")
         print(f"   同时完好保护了其他重要的医疗记录")
         print(f"\n📊 清除统计:")
         print(f"   短期记忆清除: {memory_removal.get('removed_short_term', 0)}条")

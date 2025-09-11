@@ -9,7 +9,7 @@
 3. 过了3天用户与医生再次沟通：用户说"我头晕" 
 4. 通过Qwen分析建议：头晕不是感冒，而是与糖尿病存在关系，需要更新图谱
 
-患者信息：柳阳，40岁，有糖尿病家族史，青霉素过敏
+患者信息：演示患者，通用医疗场景演示
 """
 
 import os
@@ -35,7 +35,7 @@ class DiabetesScenarioDemo:
     def __init__(self, api_key: str, db_path: str = None):
         self.api_key = api_key
         self.db_path = db_path or "/Users/louisliu/.cursor/memory-x/data/diabetes_scenario_demo.db"
-        self.user_id = "liuyang_diabetes_scenario"
+        self.user_id = "demo_patient_diabetes_scenario"
         
         # 确保数据目录存在
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
@@ -82,10 +82,10 @@ class DiabetesScenarioDemo:
     def _setup_patient_background(self):
         """设置患者背景信息"""
         print("\n👤 患者背景信息:")
-        print(f"  姓名: 柳阳")
-        print(f"  年龄: 40岁")
-        print(f"  家族史: 糖尿病遗传病史")
-        print(f"  过敏史: 青霉素过敏")
+        print(f"  姓名: 演示患者")
+        print(f"  年龄: 成年人")
+        print(f"  家族史: 糖尿病遗传病史（演示用例）")
+        print(f"  过敏史: 青霉素过敏（演示用例）")
         
         # 添加历史感冒记录（用于后续对比分析）
         self._add_historical_cold_record()
@@ -129,7 +129,7 @@ class DiabetesScenarioDemo:
             ai_response,
             {
                 "DISEASE": [["糖尿病", 0, 3]],
-                "PERSON": [["柳阳", 0, 2]]
+                "PERSON": [["演示患者", 0, 4]]
             },
             "disease_declaration",
             4  # 高重要性

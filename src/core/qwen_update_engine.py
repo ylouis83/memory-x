@@ -3,7 +3,7 @@
 基于Qwen3模型的智能医疗知识图谱更新引擎
 Enhanced Medical Knowledge Graph Update Engine with Qwen3 Model
 
-使用统一的百炼API客户端配置，专为柳阳（40岁，糖尿病遗传病史，青霉素过敏）优化
+使用统一的百炼API客户端配置，为患者医疗场景优化
 """
 
 import os

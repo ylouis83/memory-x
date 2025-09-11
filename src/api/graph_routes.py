@@ -414,8 +414,8 @@ def analyze_diabetes_risk(user_id):
         if len(diabetes_analysis['current_symptoms']) > 0:
             diabetes_analysis['risk_factors'].append('出现糖尿病相关症状')
         
-        # 年龄因素（基于您40岁的年龄）
-        diabetes_analysis['risk_factors'].append('年龄40岁，属于糖尿病高发年龄段')
+        # 年龄因素（成年人风险评估）
+        diabetes_analysis['risk_factors'].append('成年人，属于需要关注的年龄段')
         
         # 预防措施建议
         diabetes_analysis['preventive_measures'] = [

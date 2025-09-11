@@ -4,7 +4,7 @@
 Medical Knowledge Graph Demo
 
 演示如何从用户问答中提取实体信息构建医疗知识图谱
-特别针对柳阳的个人医疗信息：40岁，青霉素过敏，糖尿病家族史
+特别针对患者的个人医疗信息：成年人，青霉素过敏，糖尿病家族史
 """
 
 import sys
@@ -20,10 +20,10 @@ import json
 from datetime import datetime
 
 def demo_personal_medical_info():
-    """演示柳阳的个人医疗信息处理"""
+    """演示患者的个人医疗信息处理"""
     print("🏥 Medical Knowledge Graph Demo")
     print("=" * 60)
-    print(f"用户：柳阳，40岁，青霉素过敏，糖尿病家族史")
+    print(f"用户：演示患者，成年人，青霉素过敏，糖尿病家族史")
     print("-" * 60)
     
     # 初始化图谱管理器和实体抽取器
@@ -32,7 +32,7 @@ def demo_personal_medical_info():
     
     # 模拟用户的在线咨询对话
     user_messages = [
-        "医生您好，我叫柳阳，今年40岁，我对青霉素过敏，我家有糖尿病遗传病史。",
+        "医生您好，我是演示患者，成年人，我对青霉素过敏，我家有糖尿病遗传病史。",
         "最近感觉有点乏力，口干，多尿的症状，是不是糖尿病的前兆？",
         "我感冒了，能吃阿莫西林吗？我记得我对青霉素过敏。"
     ]
@@ -45,7 +45,7 @@ def demo_personal_medical_info():
         # 处理消息并构建图谱
         result = entity_extractor.process_user_message(
             message, 
-            user_id="liuyang_40", 
+            user_id="demo_patient", 
             session_id=f"session_{datetime.now().strftime('%Y%m%d')}"
         )
         
@@ -109,7 +109,7 @@ def demo_medical_risk_analysis(graph_manager):
     print(f"\n⚠️ 医疗风险分析")
     print("-" * 40)
     
-    user_id = "liuyang_40"
+    user_id = "demo_patient"
     
     # 分析过敏风险
     print(f"\n🚨 过敏风险分析 (基于青霉素过敏史):")
@@ -135,7 +135,7 @@ def demo_medical_risk_analysis(graph_manager):
         if rel['symptom_name'] in ['多饮', '多尿', '多食', '乏力', '口干', '视力模糊']:
             diabetes_symptoms.append(rel['symptom_name'])
     
-    print(f"   风险因素: 家族遗传史、年龄40岁")
+    print(f"   风险因素: 家族遗传史、成年人")
     if diabetes_symptoms:
         print(f"   相关症状: {', '.join(diabetes_symptoms)}")
     print(f"   预防建议: 定期血糖监测、健康饮食、规律运动")
@@ -145,7 +145,7 @@ def demo_graph_visualization_data():
     print(f"\n🎨 图谱可视化数据生成")
     print("-" * 40)
     
-    user_id = "liuyang_40"
+    user_id = "demo_patient"
     graph_manager = MedicalGraphManager("data/demo_medical_graph.db")
     
     # 获取用户的所有关系

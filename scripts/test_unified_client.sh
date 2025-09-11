@@ -6,7 +6,7 @@
 set -e
 
 echo "🧪 Memory-X 统一百炼API客户端配置测试"
-echo "专为柳阳（40岁，糖尿病遗传病史，青霉素过敏）优化"
+echo "专为医疗AI场景优化"
 echo "=================================="
 
 # 检查项目根目录
@@ -145,7 +145,7 @@ echo "3. 在代码中导入: from configs.dashscope_client import DashScopeClien
 echo "4. 创建客户端: client = DashScopeClientFactory.create_medical_client()"
 echo ""
 echo "🏥 医疗专用特性："
-echo "- 自动考虑患者年龄（40岁）"
-echo "- 自动考虑过敏史（青霉素过敏）"
-echo "- 自动考虑家族史（糖尿病遗传病史）"
+echo "- 支持配置患者年龄、过敏史、家族病史"
 echo "- 提供症状诊断和药物安全检查功能"
+echo "- 自动考虑患者个人医疗信息进行智能分析"
+echo "- 支持多种医疗AI应用场景"

@@ -467,8 +467,8 @@ def demonstrate_update_scenario():
     graph_manager = MedicalGraphManager("data/update_demo.db")
     update_engine = GraphUpdateEngine(graph_manager)
     
-    # 模拟用户ID（柳阳，40岁）
-    user_id = "liuyang_40_update_demo"
+    # 模拟用户ID（演示患者）
+    user_id = "demo_patient_update_demo"
     
     # 场景1：模拟两个月前的感冒诊断
     print("\n📅 场景设置：两个月前的感冒诊断")

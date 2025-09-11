@@ -515,10 +515,10 @@ class EnhancedQwenGraphDemo:
         
         extracted_memories = {
             "user_profile": {
-                "name": "柳阳",
-                "age": 40,
-                "allergies": ["青霉素过敏"],
-                "family_history": ["糖尿病遗传病史"],
+                "name": "演示患者",
+                "age": "成年人",
+                "allergies": ["青霉素过敏（演示用例）"],
+                "family_history": ["糖尿病遗传病史（演示用例）"],
                 "user_id": self.user_id
             },
             "memory_snapshot": {
@@ -680,11 +680,11 @@ class EnhancedQwenGraphDemo:
                 "strength": medicine.get("strength", "")
             })
         
-        # 根据用户信息识别风険因素
+        # 根据用户信息识别风险因素
         analysis["risk_factors"] = [
             "青霉素过敏 - 需要避免使用青霉素类抗生素",
             "糖尿病家族史 - 需要定期监测血糖水平",
-            "40岁中年 - 需要关注心血管和代谢疾病风険"
+            "成年人 - 需要关注心血管和代谢疾病风险"
         ]
         
         return analysis
@@ -702,9 +702,9 @@ class EnhancedQwenGraphDemo:
         total_relations = len(memory_snapshot["graph_relations"]["disease_symptom"])
         
         if recent_symptoms_count > 0:
-            summary["patient_status"] = f"柳阳（40岁）近期有{recent_symptoms_count}个症状记录，共{total_relations}条病症关系。"
+            summary["patient_status"] = f"演示患者（成年人）近期有{recent_symptoms_count}个症状记录，共{total_relations}条病症关系。"
         else:
-            summary["patient_status"] = f"柳阳（40岁）目前无最近症状记录，共{total_relations}条历史病症关系。"
+            summary["patient_status"] = f"演示患者（成年人）目前无最近症状记录，共{total_relations}条历史病症关系。"
         
         # 识别关键关注点
         if analysis["recent_symptoms"]:

@@ -21,7 +21,7 @@ def debug_actual_data():
         
         # 测试用户信息
         user_id = "actual_debug_user"
-        message = "我叫柳阳，我今年40岁，我对青霉素过敏，我家有遗传病史（糖尿病）"
+        message = "我是演示患者，我是成年人，我对青霉素过敏，我家有遗传病史（糖尿病）"
         
         print(f"用户ID: {user_id}")
         print(f"测试消息: {message}")

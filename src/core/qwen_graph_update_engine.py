@@ -121,10 +121,10 @@ class QwenGraphUpdateEngine:
 # 医疗知识图谱更新分析任务
 
 ## 患者信息
-- 姓名: 柳阳
-- 年龄: 40岁  
-- 过敏史: 青霉素过敏
-- 家族史: 糖尿病遗传病史
+- 姓名: 患者
+- 年龄: 未知  
+- 过敏史: 无
+- 家族史: 无
 
 ## 历史医疗记录
 {chr(10).join(historical_summary) if historical_summary else "无历史记录"}
@@ -148,12 +148,12 @@ class QwenGraphUpdateEngine:
 ## 特别关注
 - 感冒等急性疾病的典型病程为3-14天
 - 超出病程的症状可能是新发疾病或复发
-- **糖尿病家族史是重要风险因素**
-- **头晕是糖尿病的常见早期症状之一**
-- 40岁中年男性是糖尿病高发人群
+- **家族史是重要的风险因素（适用于所有患者）**
+- **头晕是多种疾病的常见症状之一**
+- 中年及以上人群是多种慢性病高发人群
 - 需要考虑血糖异常引起的头晕可能性
 
-## 医学知识参考
+**医学知识参考**
 - 糖尿病典型症状：多饮、多尿、多食、体重下降
 - 糖尿病早期症状：头晕、乏力、视力模糊、伤口愈合慢
 - 低血糖症状：头晕、出汗、心慌、饥饿感
@@ -462,10 +462,10 @@ def demonstrate_qwen_update_engine():
     graph_manager = MedicalGraphManager("data/qwen_update_demo.db") 
     qwen_engine = QwenGraphUpdateEngine(graph_manager, api_key)
     
-    # 柳阳的用户ID
-    user_id = "liuyang_40_qwen_demo"
+    # 模拟用户ID（演示患者）
+    user_id = "demo_patient_qwen_demo"
     
-    print(f"\n👤 患者信息：柳阳，40岁，青霉素过敏，糖尿病家族史")
+    print(f"\n👤 患者信息：演示患者，成年人，有某种遗传家族史")
     print(f"📋 场景：两个月前感冒（头晕）→ 现在头疼")
     print("-" * 60)
     

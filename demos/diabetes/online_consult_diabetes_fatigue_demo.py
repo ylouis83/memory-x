@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 在线咨询糖尿病乏力症状案例演示
-患者信息：柳阳，40岁，有糖尿病遗传病史，青霉素过敏
+患者信息：演示患者，通用医疗场景演示
 来源：online_consult
 """
 
@@ -26,15 +26,15 @@ class OnlineConsultDiabetesFatigueDemo:
     def __init__(self, api_key: str, db_path: str = None):
         self.api_key = api_key
         self.db_path = db_path or "/Users/louisliu/.cursor/memory-x/data/online_consult_diabetes_demo.db"
-        self.user_id = "liuyang_online_consult"
+        self.user_id = "demo_patient_online_consult"
         
-        # 患者基本信息
+        # 患者基本信息（演示用例）
         self.patient_info = {
-            "name": "柳阳",
-            "age": 40,
+            "name": "演示患者",
+            "age": "成年人",
             "gender": "男",
-            "allergy": "青霉素过敏",
-            "family_history": "糖尿病遗传病史"
+            "allergy": "青霉素过敏（演示用例）",
+            "family_history": "糖尿病遗传病史（演示用例）"
         }
         
         # 确保数据目录存在

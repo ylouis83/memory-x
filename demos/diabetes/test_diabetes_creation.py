@@ -21,11 +21,11 @@ def test_diabetes_relation_creation():
     graph_manager = MedicalGraphManager("/Users/louisliu/.cursor/memory-x/data/diabetes_test.db")
     qwen_engine = QwenGraphUpdateEngine(graph_manager, api_key)
     
-    user_id = "liuyang_diabetes_test"
+    user_id = "demo_patient_diabetes_test"
     current_symptoms = ["头晕"]
-    context = "患者柳阳，40岁，有糖尿病家族史，最近出现头晕症状"
+    context = "演示患者，成年人，有糖尿病家族史，最近出现头晕症状"
     
-    print(f"👤 患者: 柳阳，40岁，糖尿病家族史")
+    print(f"👤 患者: 演示患者，成年人，糖尿病家族史")
     print(f"💭 症状: {current_symptoms}")
     print(f"📝 背景: {context}")
     

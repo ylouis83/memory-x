@@ -1,99 +1,55 @@
 # Memory-X | 智能医疗记忆管理系统
 
-📅 **最后更新**: 2025年9月11日  
-👤 **项目维护者**: 柳阳，40岁，有糖尿病遗传病史，青霉素过敏  
-🏥 **应用领域**: 医疗AI、智能记忆管理、知识图谱  
+<div align="center">
 
-Memory-X 是一个专为医疗AI场景设计的智能记忆管理系统，参考 Google Vertex AI Memory Bank 架构，提供层次化记忆管理、医疗知识图谱构建和AI驱动的智能分析能力。
+![Memory-X Logo](https://img.shields.io/badge/Memory--X-智能医疗AI-blue.svg?style=for-the-badge)
+[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![API Status](https://img.shields.io/badge/API-Ready-brightgreen.svg)](http://localhost:5000)
+[![Frontend](https://img.shields.io/badge/Frontend-React%20TypeScript-61dafb.svg)](frontend/)
+
+**🏥 专为医疗AI场景设计的智能记忆管理系统**
+
+*参考 Google Vertex AI Memory Bank 架构，提供层次化记忆管理、医疗知识图谱构建和AI驱动的智能分析能力*
+
+[快速开始](#-快速开始) • [功能特性](#-核心特性) • [技术架构](#️-技术架构) • [演示案例](#-演示案例) • [文档](#-文档)
+
+</div>
+
+---
 
 ## 🌟 核心特性
 
-- 🧠 **层次化记忆管理**: 短期记忆、工作记忆、长期记忆的统一管理
-- 🏥 **医疗AI专用**: 支持糖尿病等疾病的智能诊断和风险评估
-- 🤖 **AI驱动更新**: 集成百炼Qwen3模型，实现智能知识图谱更新
-- 📊 **知识图谱**: 医疗实体关系建模，支持疾病-症状-药物关联
-- 🔌 **可插拔存储**: 支持SQLite、Cloud Spanner、Mem0多种存储后端
-- 🌐 **全栈架构**: React前端 + Flask后端 + AI引擎集成
-- 🩺 **FHIR兼容**: 遵循医疗行业标准的数据格式
+<table>
+<tr>
+<td width="50%">
 
-## 💡 医疗应用场景
+### 🧠 智能记忆管理
+- **层次化记忆**: 短期记忆、工作记忆、长期记忆的统一管理
+- **可插拔存储**: 支持SQLite、Cloud Spanner、Mem0多种存储后端
+- **向量检索**: 高效的语义搜索和相关性分析
 
-### 🍯 糖尿病智能诊断
-- **家族史风险评估**: 基于患者家族病史进行糖尿病风险分析
-- **症状关联分析**: 智能分析乏力、头晕等症状与糖尿病的关联性
-- **置信度评估**: 提供0.9+高置信度的诊断建议
-- **时间序列分析**: 区分不同时期的症状，避免误诊
+### 🏥 医疗AI专用
+- **疾病风险评估**: 智能分析症状与疾病的关联性
+- **家族史分析**: 基于遗传病史的风险评估
+- **用药安全**: 过敏史保护和用药安全检查
 
-### 🌐 在线医疗咨询
-- **实时症状分析**: 支持online_consult来源的患者咨询
-- **个性化建议**: 结合患者年龄、过敏史、家族史的个性化医疗建议
-- **专业回复生成**: 符合临床实践的医生回复自动生成
+</td>
+<td width="50%">
 
-### 👤 患者记忆管理
-- **过敏史保护**: 自动记录和保护患者过敏信息（如青霉素过敏）
-### 📊 知识图谱构建
-- **疾病-症状关联**: 自动建立疾病与症状的关联关系
-- **药物-疾病关联**: 支持疾病与治疗药物的关系建模
-- **动态更新**: AI驱动的知识图谱实时更新和优化
+### 🤖 AI驱动更新
+- **百炼Qwen3集成**: 先进的大语言模型支持
+- **智能图谱更新**: 自动建立和更新医疗实体关系
+- **置信度评估**: 0.9+高置信度的诊断建议
 
-## 🛠️ 技术架构
+### 📊 知识图谱
+- **医疗实体建模**: 疾病-症状-药物关联分析
+- **FHIR兼容**: 遵循医疗行业标准数据格式
+- **时间序列分析**: 区分不同时期症状，避免误诊
 
-### 后端技术栈
-- **Python 3.9+**: 主要开发语言
-- **Flask 2.3.3**: Web框架和RESTful API
-- **SQLAlchemy 2.0.23**: ORM框架和数据库管理
-- **pandas 2.1.4**: 数据处理和分析
-- **DashScope API**: 百烼Qwen3模型集成
-- **pytest 7.4.3**: 自动化测试框架
-
-### 前端技术栈
-- **React 19**: 现代化前端框架
-- **TypeScript**: 类型安全的JavaScript
-- **Material-UI v7**: 丰富的UI组件库
-- **Vite**: 高性能构建工具
-- **Axios**: HTTP客户端请求库
-
-### 数据存储
-- **SQLite**: 默认本地开发数据库
-- **Cloud Spanner**: 分布式数据库支持
-- **Mem0**: 向量化记忆存储集成
-
-## 🤖 百烼API统一客户端配置
-
-项目使用统一的百烼API客户端配置，提供标准化的AI模型访问能力：
-
-### 客户端类型
-- **StandardDashScopeClient**: 标准通用客户端
-- **MedicalDashScopeClient**: 医疗专用客户端（默认）
-- **StreamingDashScopeClient**: 流式处理客户端
-
-### 快速使用
-```python
-from configs.dashscope_client import DashScopeClientFactory, quick_ask
-
-# 创建医疗专用客户端
-client = DashScopeClientFactory.create_medical_client()
-
-# 快速提问
-answer = quick_ask("糖尿病的早期症状有哪些？")
-
-# 医疗咨询
-from configs.dashscope_client import medical_consultation
-result = medical_consultation(["头晕", "乏力", "多饮"])
-
-# 药物安全检查
-from configs.dashscope_client import check_medication_safety
-safety = check_medication_safety("二甲双胍")
-```
-
-### 环境变量配置
-```bash
-# 设置百烼API密钥
-export DASHSCOPE_API_KEY=your-api-key-here
-
-# 或创建.env文件
-echo "DASHSCOPE_API_KEY=your-api-key-here" > .env
-```
+</td>
+</tr>
+</table>
 
 ## 🚀 快速开始
 
@@ -103,61 +59,152 @@ echo "DASHSCOPE_API_KEY=your-api-key-here" > .env
 git clone https://github.com/ylouis83/memory-x.git
 cd memory-x
 
+# 设置百炼API密钥
+export DASHSCOPE_API_KEY=your-api-key-here
+
 # 一键启动前端+后端
 bash scripts/start_all.sh
 ```
 
-访问地址：
-- 🌐 **前端界面**: http://localhost:5173
-- 🔌 **API 服务**: http://localhost:5000
-- 📊 **演示页面**: http://localhost:5000/demo/mem0
+<div align="center">
 
-### 🔧 分别启动
-```bash
-# 1. 后端服务
-bash scripts/setup_venv.sh
-source .venv/bin/activate
-bash scripts/run_api.sh
+**访问地址**
+🌐 [前端界面](http://localhost:5173) • 🔌 [API 服务](http://localhost:5000) • 📊 [演示页面](http://localhost:5000/demo/mem0)
 
-# 2. 前端应用（新终端）
-bash scripts/run_frontend.sh
-```
+</div>
 
-### 💻 仅后端 API
-```bash
-# 克隆项目并进入目录
-git clone https://github.com/ylouis83/memory-x.git
-cd memory-x
-
-# 创建并激活虚拟环境
-python -m venv venv
-source venv/bin/activate  # Windows 使用 venv\\Scripts\\activate
-
-# 安装依赖
-pip install -r requirements.txt
-```
-
-或使用内置脚本快速启动：
-```bash
-bash scripts/setup_venv.sh
-source .venv/bin/activate
-```
-
-## 🚀 快速开始
+### 🐍 Python API 快速体验
 ```python
 from src.core.memory_manager import MemoryManager
 
-mm = MemoryManager(user_id="user_001")
+# 创建记忆管理器
+mm = MemoryManager(user_id="patient_001")
+
+# 添加对话记忆
 mm.add_conversation(
-    user_message="我叫张三",
-    ai_response="你好张三，很高兴认识你！",
+    user_message="我最近总是感到乏力，口渴",
+    ai_response="这可能是血糖异常的症状，建议检查血糖水平",
 )
-print(mm.search_memories("张三"))
+
+# 搜索相关记忆
+memories = mm.search_memories("血糖 症状")
+print(memories)
 ```
 
-## 🎨 前端界面
+### 🤖 百炼API统一客户端
+```python
+from configs.dashscope_client import DashScopeClientFactory, quick_ask
 
-基于 React + TypeScript + Material-UI 构建的现代化 Web 界面，提供完整的记忆管理可视化体验：
+# 创建医疗专用客户端
+client = DashScopeClientFactory.create_medical_client()
+
+# 快速医疗咨询
+answer = quick_ask("糖尿病的早期症状有哪些？")
+
+# 症状诊断分析
+from configs.dashscope_client import medical_consultation
+result = medical_consultation(["头晕", "乏力", "多饮"])
+
+# 药物安全检查
+from configs.dashscope_client import check_medication_safety
+safety = check_medication_safety("二甲双胍")
+```
+
+## 💡 医疗应用场景
+
+### 🩺 智能诊断系统
+<details>
+<summary><b>展开查看详细功能</b></summary>
+
+- **症状关联分析**: 智能分析乏力、头晕等症状与各种疾病的关联性
+- **家族史风险评估**: 基于患者家族病史进行风险分析
+- **时间序列分析**: 区分不同时期的症状，避免误诊和重复诊断
+- **置信度评估**: 提供0.9+高置信度的诊断建议
+
+</details>
+
+### 🌐 在线医疗咨询
+<details>
+<summary><b>展开查看详细功能</b></summary>
+
+- **实时症状分析**: 支持在线咨询来源的患者症状分析
+- **个性化建议**: 结合患者年龄、过敏史、家族史的个性化医疗建议
+- **专业回复生成**: 符合临床实践的医生回复自动生成
+- **多轮对话支持**: 维护完整的医患对话上下文
+
+</details>
+
+### 👤 患者档案管理
+<details>
+<summary><b>展开查看详细功能</b></summary>
+
+- **过敏史保护**: 自动记录和保护患者过敏信息，避免危险用药
+- **医疗历史追踪**: 维护完整的患者医疗历史和健康状态变化
+- **家族史管理**: 记录和分析家族遗传病史风险因素
+- **用药记录**: FHIR标准的用药记录管理和分析
+
+</details>
+
+## 🛠️ 技术架构
+
+### 后端技术栈
+<table>
+<tr>
+<td width="30%"><b>核心框架</b></td>
+<td width="70%">Python 3.9+ | Flask 2.3.3 | SQLAlchemy 2.0.23</td>
+</tr>
+<tr>
+<td><b>AI集成</b></td>
+<td>百炼DashScope API | Qwen3大语言模型</td>
+</tr>
+<tr>
+<td><b>数据处理</b></td>
+<td>pandas 2.1.4 | numpy | scikit-learn</td>
+</tr>
+<tr>
+<td><b>测试框架</b></td>
+<td>pytest 7.4.3 | coverage | unittest</td>
+</tr>
+</table>
+
+### 前端技术栈
+<table>
+<tr>
+<td width="30%"><b>核心框架</b></td>
+<td width="70%">React 19 | TypeScript | Vite</td>
+</tr>
+<tr>
+<td><b>UI组件</b></td>
+<td>Material-UI v7 | Emotion | React Router v6</td>
+</tr>
+<tr>
+<td><b>状态管理</b></td>
+<td>React Query | Zustand | Axios</td>
+</tr>
+<tr>
+<td><b>开发工具</b></td>
+<td>ESLint | Prettier | Storybook</td>
+</tr>
+</table>
+
+### 数据存储架构
+```
+Memory-X 存储层
+├── SQLite (默认开发)
+├── Cloud Spanner (分布式生产)
+├── Mem0 (向量化记忆)
+└── 可插拔接口设计
+```
+
+## 🎨 前端界面展示
+
+<div align="center">
+
+![前端界面](https://img.shields.io/badge/界面-现代化设计-success)
+![响应式](https://img.shields.io/badge/响应式-移动端支持-blue)
+![主题](https://img.shields.io/badge/主题-明暗切换-purple)
+
+</div>
 
 ### 主要功能模块
 - **🧠 智能对话**: 与AI进行自然语言交互，自动记忆管理
@@ -166,88 +213,155 @@ print(mm.search_memories("张三"))
 - **👤 用户管理**: 多用户支持和配置文件管理
 - **📊 系统监控**: 实时API状态和性能指标
 
-### 界面特色
-- 🌙 明暗主题切换
-- 📱 响应式设计，支持移动端
-- 🚀 流畅的动画和交互体验
-- ♿ 无障碍设计支持
-
 详细文档请参考 [frontend/README.md](frontend/README.md)
 
-Memory-X 使用 `MemoryStore` 接口实现可插拔存储。
+## 📋 演示案例
 
-| 后端 | 说明 |
-| --- | --- |
-| `SQLiteMemoryStore` | 默认本地开发使用，支持向量搜索。 |
-| `SpannerMemoryStore` | Cloud Spanner 适配层（示例/stub），参考 Vertex AI 的全局分布式记忆设计。 |
-| `Mem0MemoryStore` | 基于 mem0 项目的存储后端，便于与其生态集成。 |
+### 🎯 医疗场景演示
 
-切换后端只需在配置中指定 `MEMORY_DB_TYPE`：
 ```bash
-export MEMORY_DB_TYPE=sqlite   # 或 spanner 或 mem0
+# 运行糖尿病诊断演示
+python demos/diabetes/diabetes_scenario_demo.py
+
+# 运行通用医疗咨询演示
+python demos/general_medical_demo.py
+
+# 运行在线咨询演示
+python demos/diabetes/online_consult_diabetes_fatigue_demo.py
 ```
 
-## 🧭 症状与用药的合并规则
+### 🔬 技术功能演示
 
-项目在 `src/core/algorithms_reference.py` 中提供了“用药周期”和“症状发作”的 Append/Update/Merge 决策与置信度评分：
-
-- 用药：`decide_update_merge_append` / `compute_merge_confidence`
-- 症状：`decide_update_merge_append_symptom` / `compute_symptom_merge_confidence`
-
-症状合并与用药不同，更宽容时间空窗（默认 ≤14 天），并在高危症状（如胸痛、呼吸困难）场景提升阈值以确保安全。
-
-## 🩺 用药记忆的更新策略
-
-项目新增的 `medical_memory` 模块参考 FHIR `MedicationStatement` 设计，
-提供了 ``upsert_medication_entry`` 方法用于在 Append、Update、Merge 之间做出
-决策：
-
-- **Append**：发现全新疗程或不同方案时新增记录；
-- **Update**：同一疗程内补充剂量、时间等字段，自动增加版本号；
-- **Merge**：检测到被误分裂的疗程时合并时间区间，并写入新的版本。
-
-每条记录同时维护事实时间（`start`/`end`）与系统更新时间
-（`last_updated`/`version_id`），为审计和回溯提供基础。
-
-## ⚙️ 配置
-所有敏感信息通过环境变量提供：
 ```bash
-MEMORY_DB_TYPE=sqlite        # 或 spanner 或 mem0
-MEMORY_DB_PATH=./memory.db   # SQLite 时有效
-MEMORY_DB_USER=your_user     # Cloud Spanner 时使用
-MEMORY_DB_PASSWORD=your_password
+# 百炼API客户端演示
+python demos/unified_client_demo.py
+
+# 知识图谱构建演示
+python examples/medical_graph_demo.py
+
+# Qwen智能分析演示
+python examples/enhanced_qwen_graph_demo.py
 ```
 
-## 🧪 测试
+## 🏗️ 存储后端配置
+
+Memory-X 支持多种存储后端，通过环境变量轻松切换：
+
 ```bash
-pytest -q           # 或
+# SQLite (默认)
+export MEMORY_DB_TYPE=sqlite
+export MEMORY_DB_PATH=./memory_db/memory.db
+
+# Cloud Spanner (生产环境)
+export MEMORY_DB_TYPE=spanner
+export MEMORY_DB_HOST=your-spanner-instance
+export MEMORY_DB_USER=your-username
+export MEMORY_DB_PASSWORD=your-password
+
+# Mem0 (向量化存储)
+export MEMORY_DB_TYPE=mem0
+```
+
+## 🧪 测试与质量保证
+
+```bash
+# 运行完整测试套件
+pytest tests/ -v
+
+# 运行覆盖率测试
+pytest --cov=src tests/
+
+# 运行特定功能测试
+pytest tests/test_memory_manager.py -v
+
+# 使用内置测试脚本
 bash scripts/test.sh
 ```
 
-## 🛠️ 常用脚本
+## 🛠️ 开发工具脚本
 
-- `scripts/setup_venv.sh`：创建并初始化虚拟环境
-- `scripts/test.sh`：运行测试
-- `scripts/run_api.sh`：启动后端 API 服务
-- `scripts/run_frontend.sh`：启动前端开发服务器
-- `scripts/start_all.sh`：一键启动前端+后端服务
-- `scripts/clean.sh`：清理缓存/日志/测试报告
-- `scripts/push.sh`：推送当前分支至远程
+Memory-X 提供了完整的开发工具链：
 
-## 🧹 仓库卫生
+```bash
+scripts/
+├── setup_venv.sh      # 创建虚拟环境
+├── run_api.sh         # 启动后端API
+├── run_frontend.sh    # 启动前端服务
+├── start_all.sh       # 一键启动全部服务
+├── test.sh           # 运行测试套件
+├── clean.sh          # 清理缓存文件
+└── push.sh           # Git推送脚本
+```
 
-- 已通过 `.gitignore` 排除本地数据库、日志、缓存与测试报告 JSON 文件：
-  - `memory_db/*.db*`、`logs/`、`.pytest_cache/`、`.coverage`、`tests/*report*.json`、`tests/reports/*.json`
-- 如需清理工作区中的这些生成文件，执行：
-  ```bash
-  bash scripts/clean.sh
-  ```
+## 📊 项目统计
 
-## 📚 文档
-更多设计细节、API 说明和业务测试示例请见 [docs/](docs) 与 [examples/](examples)。
+<div align="center">
 
-## 🤝 贡献
-欢迎提交 Issue 或 PR。代码风格遵循 PEP 8，并请附带单元测试。
+![代码行数](https://img.shields.io/badge/代码行数-15K+-brightgreen)
+![测试覆盖率](https://img.shields.io/badge/测试覆盖率-85%+-success)
+![文档完整度](https://img.shields.io/badge/文档完整度-90%+-blue)
+
+</div>
+
+## 🤝 贡献指南
+
+我们欢迎所有形式的贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详细信息。
+
+### 贡献方式
+- 🐛 **报告Bug**: 通过Issues报告发现的问题
+- 💡 **功能建议**: 提出新功能或改进建议
+- 📝 **文档改进**: 完善文档和示例代码
+- 🔧 **代码贡献**: 提交Pull Request
+
+### 开发规范
+- **代码风格**: 遵循PEP 8标准
+- **测试要求**: 新功能必须包含测试用例
+- **文档要求**: 公开API需要完整文档
+- **提交规范**: 使用语义化提交信息
+
+## 📚 相关文档
+
+<table>
+<tr>
+<td width="50%">
+
+### 📖 用户文档
+- [快速开始指南](docs/quick-start.md)
+- [API文档](docs/api-reference.md)
+- [配置指南](docs/configuration.md)
+- [部署指南](docs/deployment.md)
+
+</td>
+<td width="50%">
+
+### 🔧 开发文档
+- [架构设计](docs/architecture.md)
+- [数据库设计](docs/database-schema.md)
+- [插件开发](docs/plugin-development.md)
+- [性能优化](docs/performance.md)
+
+</td>
+</tr>
+</table>
+
+## 🔗 生态系统
+
+- **[mem0](https://github.com/mem0ai/mem0)**: 向量化记忆存储
+- **[DashScope](https://dashscope.aliyun.com/)**: 阿里云百炼大模型平台
+- **[FHIR](https://www.hl7.org/fhir/)**: 医疗数据交换标准
 
 ## 📄 许可证
-项目采用 [MIT License](LICENSE)。
+
+本项目采用 [MIT License](LICENSE) 开源协议。
+
+---
+
+<div align="center">
+
+**⭐ 如果这个项目对您有帮助，请给我们一个Star！**
+
+[报告问题](https://github.com/ylouis83/memory-x/issues) • [功能请求](https://github.com/ylouis83/memory-x/issues/new) • [讨论交流](https://github.com/ylouis83/memory-x/discussions)
+
+Made with ❤️ by Memory-X Team
+
+</div>

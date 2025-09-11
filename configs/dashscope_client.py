@@ -4,7 +4,7 @@
 """
 百炼DashScope API通用客户端配置
 为Memory-X智能医疗记忆管理系统提供统一的AI模型访问能力
-专为柳阳（40岁，糖尿病遗传病史，青霉素过敏）等医疗场景优化
+适用于各种医疗场景和患者信息的通用处理
 """
 
 import os
@@ -41,13 +41,13 @@ class DashScopeConfig:
         if not self.api_key:
             raise ValueError("DASHSCOPE_API_KEY is required")
         
-        # 设置默认患者上下文（柳阳的医疗信息）
+        # 设置默认患者上下文（可配置的医疗信息）
         if self.medical_mode and not self.patient_context:
             self.patient_context = {
-                "patient_name": "柳阳",
-                "age": 40,
-                "allergies": ["青霉素"],
-                "family_history": ["糖尿病遗传病史"],
+                "patient_name": "患者",
+                "age": None,
+                "allergies": [],
+                "family_history": [],
                 "medical_focus": ["糖尿病风险评估", "药物安全", "症状分析"]
             }
 
@@ -98,13 +98,13 @@ class BaseDashScopeClient(ABC):
 
 当前患者信息：
 - 姓名：{patient_info.get('patient_name', '患者')}
-- 年龄：{patient_info.get('age', '未知')}岁
-- 过敏史：{', '.join(patient_info.get('allergies', []))}
-- 家族病史：{', '.join(patient_info.get('family_history', []))}
+- 年龄：{patient_info.get('age', '未知') if patient_info.get('age') else '未知'}岁
+- 过敏史：{', '.join(patient_info.get('allergies', [])) if patient_info.get('allergies') else '无'}
+- 家族病史：{', '.join(patient_info.get('family_history', [])) if patient_info.get('family_history') else '无'}
 
 重要医疗原则：
 1. 始终考虑患者的过敏史，避免推荐含有过敏原的药物
-2. 重视家族病史，特别关注糖尿病遗传风险
+2. 重视家族病史，特别关注遗传病风险
 3. 提供专业、准确、安全的医疗建议
 4. 如遇紧急情况，建议立即就医
 5. 所有建议仅供参考，最终诊断需以医生意见为准
@@ -264,9 +264,9 @@ class MedicalDashScopeClient(StandardDashScopeClient):
 症状：{symptoms_text}
 
 请考虑：
-1. 患者的家族病史（特别是糖尿病遗传风险）
-2. 已知过敏史（青霉素过敏）
-3. 年龄因素（40岁）
+1. 患者的家族病史（如有）
+2. 已知过敏史（如有）
+3. 年龄因素（如适用）
 4. 症状间的关联性和可能的病因
 5. 推荐的检查项目和注意事项
 
@@ -289,9 +289,9 @@ class MedicalDashScopeClient(StandardDashScopeClient):
 请对药物 "{medication}" 进行安全性分析：
 
 需要检查的安全要点：
-1. 是否含有青霉素成分或相关过敏原
-2. 是否适合糖尿病高风险患者使用
-3. 对40岁成年人的适用性
+1. 是否含有已知过敏原成分
+2. 是否适合有家族病史的患者使用
+3. 对成年患者的适用性
 4. 常见副作用和注意事项
 5. 用药禁忌和相互作用
 
@@ -443,7 +443,7 @@ def check_medication_safety(medication: str) -> str:
         return client.medication_safety_check(medication)
     else:
         # 降级处理
-        return client.generate_response(f"请分析药物 {medication} 的安全性，特别考虑青霉素过敏和糖尿病风险。")
+        return client.generate_response(f"请分析药物 {medication} 的安全性，考虑患者的过敏史和家族病史。")
 
 
 if __name__ == "__main__":
@@ -458,7 +458,7 @@ if __name__ == "__main__":
         client = DashScopeClientFactory.create_medical_client()
         
         # 测试基础对话
-        response = client.generate_response("你好，我是柳阳，40岁，想咨询糖尿病相关问题。")
+        response = client.generate_response("你好，我想咨询一些医疗健康相关的问题。")
         print("AI回答:", response)
         
         # 测试症状诊断

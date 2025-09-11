@@ -367,7 +367,7 @@ def demonstrate_qwen_analysis():
         print("-" * 50)
         
         current_symptoms = ["头疼"]
-        context = "患者柳阳，40岁，再次咨询头疼症状，两个月前曾因头晕诊断为感冒"
+        context = "演示患者，成年人，再次咨询头疼症状，两个月前曾因头晕诊断为感冒"
         
         print(f"当前症状：{', '.join(current_symptoms)}")
         print(f"上下文：{context}")
