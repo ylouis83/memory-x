@@ -11,7 +11,7 @@ import re
 import json
 from typing import Dict, List, Tuple, Optional, Set
 from datetime import datetime
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 from .medical_graph_manager import (
     MedicalGraphManager, DiseaseEntity, SymptomEntity, MedicineEntity,
@@ -313,6 +313,7 @@ class MedicalEntityExtractor:
         """处理用户消息并构建图谱"""
         # 抽取实体和关系
         extracted = self.extract_entities_from_text(message, user_id, session_id)
+        serialized_extracted = self._serialize_extracted_summary(extracted)
         
         # 存储到图谱
         stored_entities = {
@@ -411,8 +412,23 @@ class MedicalEntityExtractor:
         return {
             'success': True,
             'message': f"成功处理用户消息，提取并存储了 {sum(stored_entities.values())} 个图谱元素",
-            'extracted_summary': extracted,
+            'extracted_summary': serialized_extracted,
             'stored_counts': stored_entities,
             'user_id': user_id,
             'session_id': session_id
         }
+
+    def _serialize_extracted_summary(self, extracted: Dict[str, object]) -> Dict[str, object]:
+        """将提取的实体和关系转换为可JSON序列化的结构"""
+        serialized: Dict[str, object] = {}
+        for key, items in extracted.items():
+            if key in ('diseases', 'symptoms', 'medicines'):
+                serialized[key] = [asdict(entity) for entity in items]
+            elif key == 'source':
+                # SourceType 枚举 → 字符串
+                serialized[key] = items.value if items else SourceType.ONLINE_CONSULT.value
+            else:
+                serialized[key] = items
+        if 'source' not in serialized:
+            serialized['source'] = extracted.get('source', SourceType.ONLINE_CONSULT).value
+        return serialized
