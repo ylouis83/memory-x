@@ -56,8 +56,16 @@ class Mem0MemoryStore(MemoryStore):
         res = self.memory.search(query, user_id=user_id, limit=top_k)
         results: List[Dict] = []
         for item in res.get("results", []):
+            memory_text = item.get("memory", "")
+            # 使返回结构与其他存储实现保持一致，避免上层出现KeyError
             results.append({
-                "content": item.get("memory", ""),
+                "content": memory_text,
+                "user_message": memory_text,
+                "ai_response": item.get("response", ""),
+                "timestamp": item.get("timestamp"),
+                "importance": item.get("importance", 1),
+                "entities": item.get("metadata", {}),
+                "intent": item.get("intent"),
                 "score": item.get("score", 0.0),
             })
         return results

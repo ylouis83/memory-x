@@ -29,9 +29,10 @@ qwen_engine = None
 try:
     # 这里应该从环境变量或配置文件读取API密钥
     qwen_api_key = os.getenv('DASHSCOPE_API_KEY')
-    if not qwen_api_key:
-        return jsonify({"error": "未设置DASHSCOPE_API_KEY环境变量"}), 500
-    qwen_engine = QwenGraphUpdateEngine(graph_manager, qwen_api_key)
+    if qwen_api_key:
+        qwen_engine = QwenGraphUpdateEngine(graph_manager, qwen_api_key)
+    else:
+        print("⚠️ 未设置DASHSCOPE_API_KEY环境变量，跳过Qwen3引擎初始化")
 except Exception as e:
     print(f"⚠️ Qwen3引擎初始化失败: {e}")
 

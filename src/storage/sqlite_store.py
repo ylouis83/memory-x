@@ -97,13 +97,15 @@ class SQLiteMemoryStore(MemoryStore):
     # Retrieval -----------------------------------------------------------------
     @staticmethod
     def _embed(text: str) -> List[float]:
-        """Simple character frequency embedding used for tests.
+        """Hashed character frequency embedding with Unicode support.
 
-        The vector dimension is fixed at 26 (letters a-z)."""
-        vec = [0.0] * 26
+        We keep the implementation lightweight by hashing characters into
+        256 buckets so that non-Latin scripts still contribute signal."""
+        vec = [0.0] * 256
         for ch in text.lower():
-            if "a" <= ch <= "z":
-                vec[ord(ch) - 97] += 1.0
+            if ch.isspace():
+                continue
+            vec[ord(ch) % 256] += 1.0
         return vec
 
     @staticmethod

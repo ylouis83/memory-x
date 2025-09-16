@@ -44,6 +44,10 @@ def create_app(config_name: str = None):
     # 加载配置
     config = get_config(config_name)
     app.config.from_object(config)
+    app.config.update(config.get_flask_config())
+    if not app.config.get('SECRET_KEY'):
+        # 生成临时密钥以避免Flask在运行时报错
+        app.config['SECRET_KEY'] = os.urandom(24).hex()
     
     # 配置CORS
     CORS(app, origins=config.API['cors_origins'])

@@ -7,6 +7,7 @@ Medical Knowledge Graph Manager
 支持从用户在线问答中提取实体信息并构建知识图谱
 """
 
+import os
 import sqlite3
 import json
 import uuid
@@ -116,6 +117,9 @@ class MedicalGraphManager:
     
     def _init_database(self):
         """初始化数据库"""
+        db_dir = os.path.dirname(os.path.abspath(self.db_path))
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
