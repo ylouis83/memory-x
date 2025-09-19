@@ -11,9 +11,10 @@ import os
 import sqlite3
 import json
 import uuid
+from contextlib import contextmanager
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, Any
-from dataclasses import dataclass, asdict
+from typing import Dict, List, Optional, Any, Tuple
+from dataclasses import dataclass
 from enum import Enum
 
 class SourceType(Enum):
@@ -110,21 +111,76 @@ class DiseaseMedicineRelation:
 
 class MedicalGraphManager:
     """医疗知识图谱管理器"""
-    
+    _ENTITY_TABLE_MAP = {
+        'disease': 'diseases',
+        'symptom': 'symptoms',
+        'medicine': 'medicines'
+    }
+
     def __init__(self, db_path: str = "data/medical_graph.db"):
         self.db_path = db_path
         self._init_database()
-    
+
+    @contextmanager
+    def _connect(self):
+        """Context manager wrapping sqlite connection with common pragmas and row factory."""
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA busy_timeout = 3000")
+        try:
+            yield conn
+            if conn.in_transaction:
+                conn.commit()
+        except Exception:
+            if conn.in_transaction:
+                conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+    @staticmethod
+    def _ensure_timestamps(entity) -> Tuple[str, str]:
+        """Ensure dataclass-like entity carries proper timestamps and return iso strings."""
+        now = datetime.now()
+        if getattr(entity, "created_time", None) is None:
+            entity.created_time = now
+        entity.updated_time = now
+        return entity.created_time.isoformat(), entity.updated_time.isoformat()
+
+    @staticmethod
+    def _serialize_optional_json(value: Optional[List[Any]]) -> Optional[str]:
+        """Serialize optional JSON fields while preserving existing string payloads."""
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value
+        return json.dumps(value, ensure_ascii=False)
+
+    @staticmethod
+    def _deserialize_optional_json(value: Optional[str]) -> Optional[Any]:
+        """Best-effort JSON deserialization that tolerates legacy plain strings."""
+        if value in (None, ""):
+            return value
+        try:
+            return json.loads(value)
+        except (TypeError, json.JSONDecodeError):
+            return value
+
     def _init_database(self):
         """初始化数据库"""
         db_dir = os.path.dirname(os.path.abspath(self.db_path))
         if db_dir:
             os.makedirs(db_dir, exist_ok=True)
         conn = sqlite3.connect(self.db_path)
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous = NORMAL")
         cursor = conn.cursor()
-        
+
         # 直接创建基本表结构，不使用复杂的schema文件
         self._create_basic_tables(cursor)
+        self._create_indexes(cursor)
         conn.commit()
         conn.close()
     
@@ -223,28 +279,58 @@ class MedicalGraphManager:
             )
         ''')
 
+    def _create_indexes(self, cursor):
+        """创建常用查询的索引以提升检索性能"""
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_disease_symptom_disease_id
+            ON disease_symptom_relations (disease_id)
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_disease_symptom_symptom_id
+            ON disease_symptom_relations (symptom_id)
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_disease_symptom_user_source
+            ON disease_symptom_relations (user_id, source)
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_disease_medicine_disease_id
+            ON disease_medicine_relations (disease_id)
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_disease_medicine_medicine_id
+            ON disease_medicine_relations (medicine_id)
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_disease_medicine_user_source
+            ON disease_medicine_relations (user_id, source)
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_diseases_name
+            ON diseases (name)
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_symptoms_name
+            ON symptoms (name)
+        ''')
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_medicines_name
+            ON medicines (name)
+        ''')
+
     def add_disease(self, disease: DiseaseEntity) -> bool:
         """添加疾病实体"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            if not disease.created_time:
-                disease.created_time = datetime.now()
-            disease.updated_time = datetime.now()
-            
-            cursor.execute('''
-                INSERT OR REPLACE INTO diseases 
-                (id, name, code, category, severity, description, created_time, updated_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                disease.id, disease.name, disease.code, disease.category,
-                disease.severity, disease.description,
-                disease.created_time.isoformat(), disease.updated_time.isoformat()
-            ))
-            
-            conn.commit()
-            conn.close()
+            created_iso, updated_iso = self._ensure_timestamps(disease)
+            with self._connect() as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO diseases
+                    (id, name, code, category, severity, description, created_time, updated_time)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    disease.id, disease.name, disease.code, disease.category,
+                    disease.severity, disease.description, created_iso, updated_iso
+                ))
             return True
         except Exception as e:
             print(f"添加疾病实体失败: {e}")
@@ -253,25 +339,16 @@ class MedicalGraphManager:
     def add_symptom(self, symptom: SymptomEntity) -> bool:
         """添加症状实体"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            if not symptom.created_time:
-                symptom.created_time = datetime.now()
-            symptom.updated_time = datetime.now()
-            
-            cursor.execute('''
-                INSERT OR REPLACE INTO symptoms 
-                (id, name, description, body_part, intensity, duration_type, created_time, updated_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                symptom.id, symptom.name, symptom.description, symptom.body_part,
-                symptom.intensity, symptom.duration_type,
-                symptom.created_time.isoformat(), symptom.updated_time.isoformat()
-            ))
-            
-            conn.commit()
-            conn.close()
+            created_iso, updated_iso = self._ensure_timestamps(symptom)
+            with self._connect() as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO symptoms
+                    (id, name, description, body_part, intensity, duration_type, created_time, updated_time)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    symptom.id, symptom.name, symptom.description, symptom.body_part,
+                    symptom.intensity, symptom.duration_type, created_iso, updated_iso
+                ))
             return True
         except Exception as e:
             print(f"添加症状实体失败: {e}")
@@ -280,27 +357,19 @@ class MedicalGraphManager:
     def add_medicine(self, medicine: MedicineEntity) -> bool:
         """添加药品实体"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            if not medicine.created_time:
-                medicine.created_time = datetime.now()
-            medicine.updated_time = datetime.now()
-            
-            cursor.execute('''
-                INSERT OR REPLACE INTO medicines 
-                (id, name, generic_name, brand_name, dosage_form, strength, 
-                 manufacturer, drug_class, prescription_required, created_time, updated_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                medicine.id, medicine.name, medicine.generic_name, medicine.brand_name,
-                medicine.dosage_form, medicine.strength, medicine.manufacturer,
-                medicine.drug_class, medicine.prescription_required,
-                medicine.created_time.isoformat(), medicine.updated_time.isoformat()
-            ))
-            
-            conn.commit()
-            conn.close()
+            created_iso, updated_iso = self._ensure_timestamps(medicine)
+            with self._connect() as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO medicines
+                    (id, name, generic_name, brand_name, dosage_form, strength,
+                     manufacturer, drug_class, prescription_required, created_time, updated_time)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    medicine.id, medicine.name, medicine.generic_name, medicine.brand_name,
+                    medicine.dosage_form, medicine.strength, medicine.manufacturer,
+                    medicine.drug_class, medicine.prescription_required,
+                    created_iso, updated_iso
+                ))
             return True
         except Exception as e:
             print(f"添加药品实体失败: {e}")
@@ -309,29 +378,20 @@ class MedicalGraphManager:
     def add_disease_symptom_relation(self, relation: DiseaseSymptomRelation) -> bool:
         """添加疾病-症状关系"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            if not relation.created_time:
-                relation.created_time = datetime.now()
-            relation.updated_time = datetime.now()
-            
-            cursor.execute('''
-                INSERT OR REPLACE INTO disease_symptom_relations 
-                (id, disease_id, symptom_id, relation_type, source, confidence, frequency,
-                 context, user_id, session_id, severity_correlation, time_correlation,
-                 created_time, updated_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                relation.id, relation.disease_id, relation.symptom_id, relation.relation_type,
-                relation.source, relation.confidence, relation.frequency, relation.context,
-                relation.user_id, relation.session_id, relation.severity_correlation,
-                relation.time_correlation, relation.created_time.isoformat(),
-                relation.updated_time.isoformat()
-            ))
-            
-            conn.commit()
-            conn.close()
+            created_iso, updated_iso = self._ensure_timestamps(relation)
+            with self._connect() as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO disease_symptom_relations
+                    (id, disease_id, symptom_id, relation_type, source, confidence, frequency,
+                     context, user_id, session_id, severity_correlation, time_correlation,
+                     created_time, updated_time)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    relation.id, relation.disease_id, relation.symptom_id, relation.relation_type,
+                    relation.source, relation.confidence, relation.frequency, relation.context,
+                    relation.user_id, relation.session_id, relation.severity_correlation,
+                    relation.time_correlation, created_iso, updated_iso
+                ))
             return True
         except Exception as e:
             print(f"添加疾病-症状关系失败: {e}")
@@ -340,35 +400,26 @@ class MedicalGraphManager:
     def add_disease_medicine_relation(self, relation: DiseaseMedicineRelation) -> bool:
         """添加疾病-药品关系"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            if not relation.created_time:
-                relation.created_time = datetime.now()
-            relation.updated_time = datetime.now()
-            
-            # 处理JSON字段
-            side_effects_json = json.dumps(relation.side_effects) if relation.side_effects else None
-            contraindications_json = json.dumps(relation.contraindications) if relation.contraindications else None
-            
-            cursor.execute('''
-                INSERT OR REPLACE INTO disease_medicine_relations 
-                (id, disease_id, medicine_id, relation_type, source, effectiveness,
-                 dosage, frequency, duration, administration_route, side_effects,
-                 contraindications, user_id, doctor_id, prescription_date,
-                 treatment_outcome, created_time, updated_time)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                relation.id, relation.disease_id, relation.medicine_id, relation.relation_type,
-                relation.source, relation.effectiveness, relation.dosage, relation.frequency,
-                relation.duration, relation.administration_route, side_effects_json,
-                contraindications_json, relation.user_id, relation.doctor_id,
-                relation.prescription_date, relation.treatment_outcome,
-                relation.created_time.isoformat(), relation.updated_time.isoformat()
-            ))
-            
-            conn.commit()
-            conn.close()
+            created_iso, updated_iso = self._ensure_timestamps(relation)
+            side_effects_json = self._serialize_optional_json(relation.side_effects)
+            contraindications_json = self._serialize_optional_json(relation.contraindications)
+
+            with self._connect() as conn:
+                conn.execute('''
+                    INSERT OR REPLACE INTO disease_medicine_relations
+                    (id, disease_id, medicine_id, relation_type, source, effectiveness,
+                     dosage, frequency, duration, administration_route, side_effects,
+                     contraindications, user_id, doctor_id, prescription_date,
+                     treatment_outcome, created_time, updated_time)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    relation.id, relation.disease_id, relation.medicine_id, relation.relation_type,
+                    relation.source, relation.effectiveness, relation.dosage, relation.frequency,
+                    relation.duration, relation.administration_route, side_effects_json,
+                    contraindications_json, relation.user_id, relation.doctor_id,
+                    relation.prescription_date, relation.treatment_outcome,
+                    created_iso, updated_iso
+                ))
             return True
         except Exception as e:
             print(f"添加疾病-药品关系失败: {e}")
@@ -376,38 +427,20 @@ class MedicalGraphManager:
 
     def search_entities_by_name(self, entity_type: str, name: str) -> List[Dict]:
         """根据名称搜索实体"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        table_map = {
-            'disease': 'diseases',
-            'symptom': 'symptoms', 
-            'medicine': 'medicines'
-        }
-        
-        table_name = table_map.get(entity_type)
+        table_name = self._ENTITY_TABLE_MAP.get(entity_type)
         if not table_name:
             return []
         
-        cursor.execute(f'''
-            SELECT * FROM {table_name} 
-            WHERE name LIKE ? 
-            ORDER BY name
-        ''', (f'%{name}%',))
-        
-        columns = [description[0] for description in cursor.description]
-        results = []
-        for row in cursor.fetchall():
-            results.append(dict(zip(columns, row)))
-        
-        conn.close()
-        return results
+        with self._connect() as conn:
+            cursor = conn.execute(f'''
+                SELECT * FROM {table_name}
+                WHERE name LIKE ?
+                ORDER BY name
+            ''', (f'%{name}%',))
+            return [dict(row) for row in cursor.fetchall()]
 
     def get_disease_symptom_relations(self, user_id: str = None, source: str = None) -> List[Dict]:
         """获取疾病-症状关系"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
         query = '''
             SELECT dsr.*, d.name as disease_name, s.name as symptom_name
             FROM disease_symptom_relations dsr
@@ -415,32 +448,24 @@ class MedicalGraphManager:
             JOIN symptoms s ON dsr.symptom_id = s.id
             WHERE 1=1
         '''
-        params = []
-        
+        params: List[Any] = []
+
         if user_id:
             query += ' AND dsr.user_id = ?'
             params.append(user_id)
-        
+
         if source:
             query += ' AND dsr.source = ?'
             params.append(source)
-        
+
         query += ' ORDER BY dsr.confidence DESC, dsr.created_time DESC'
-        
-        cursor.execute(query, params)
-        columns = [description[0] for description in cursor.description]
-        results = []
-        for row in cursor.fetchall():
-            results.append(dict(zip(columns, row)))
-        
-        conn.close()
-        return results
+
+        with self._connect() as conn:
+            cursor = conn.execute(query, params)
+            return [dict(row) for row in cursor.fetchall()]
 
     def get_disease_medicine_relations(self, user_id: str = None, source: str = None) -> List[Dict]:
         """获取疾病-药品关系"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
         query = '''
             SELECT dmr.*, d.name as disease_name, m.name as medicine_name
             FROM disease_medicine_relations dmr
@@ -448,45 +473,30 @@ class MedicalGraphManager:
             JOIN medicines m ON dmr.medicine_id = m.id
             WHERE 1=1
         '''
-        params = []
-        
+        params: List[Any] = []
+
         if user_id:
             query += ' AND dmr.user_id = ?'
             params.append(user_id)
-        
+
         if source:
             query += ' AND dmr.source = ?'
             params.append(source)
-        
+
         query += ' ORDER BY dmr.created_time DESC'
-        
-        cursor.execute(query, params)
-        columns = [description[0] for description in cursor.description]
-        results = []
-        for row in cursor.fetchall():
-            result = dict(zip(columns, row))
-            # 解析JSON字段
-            if result.get('side_effects'):
-                try:
-                    result['side_effects'] = json.loads(result['side_effects'])
-                except:
-                    pass
-            if result.get('contraindications'):
-                try:
-                    result['contraindications'] = json.loads(result['contraindications'])
-                except:
-                    pass
-            results.append(result)
-        
-        conn.close()
-        return results
+
+        with self._connect() as conn:
+            cursor = conn.execute(query, params)
+            results = []
+            for row in cursor.fetchall():
+                record = dict(row)
+                record['side_effects'] = self._deserialize_optional_json(record.get('side_effects'))
+                record['contraindications'] = self._deserialize_optional_json(record.get('contraindications'))
+                results.append(record)
+            return results
 
     def get_user_graph_summary(self, user_id: str) -> Dict:
         """获取用户图谱摘要"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        # 统计用户相关的实体和关系数量
         summary = {
             'user_id': user_id,
             'disease_symptom_relations': 0,
@@ -496,48 +506,39 @@ class MedicalGraphManager:
             'unique_medicines': 0,
             'data_sources': []
         }
-        
-        # 疾病-症状关系统计
-        cursor.execute('''
-            SELECT COUNT(*), COUNT(DISTINCT disease_id), COUNT(DISTINCT symptom_id)
-            FROM disease_symptom_relations 
-            WHERE user_id = ?
-        ''', (user_id,))
-        ds_count, ds_diseases, ds_symptoms = cursor.fetchone()
-        summary['disease_symptom_relations'] = ds_count or 0
-        
-        # 疾病-药品关系统计
-        cursor.execute('''
-            SELECT COUNT(*), COUNT(DISTINCT disease_id), COUNT(DISTINCT medicine_id)
-            FROM disease_medicine_relations 
-            WHERE user_id = ?
-        ''', (user_id,))
-        dm_count, dm_diseases, dm_medicines = cursor.fetchone()
-        summary['disease_medicine_relations'] = dm_count or 0
-        
-        # 唯一实体统计
-        summary['unique_diseases'] = max(ds_diseases or 0, dm_diseases or 0)
-        summary['unique_symptoms'] = ds_symptoms or 0
-        summary['unique_medicines'] = dm_medicines or 0
-        
-        # 数据源统计
-        cursor.execute('''
-            SELECT DISTINCT source FROM (
-                SELECT source FROM disease_symptom_relations WHERE user_id = ?
-                UNION
-                SELECT source FROM disease_medicine_relations WHERE user_id = ?
-            )
-        ''', (user_id, user_id))
-        sources = cursor.fetchall()
-        summary['data_sources'] = [source[0] for source in sources]
-        
-        conn.close()
+
+        with self._connect() as conn:
+            ds_count, ds_diseases, ds_symptoms = conn.execute('''
+                SELECT COUNT(*), COUNT(DISTINCT disease_id), COUNT(DISTINCT symptom_id)
+                FROM disease_symptom_relations
+                WHERE user_id = ?
+            ''', (user_id,)).fetchone()
+            summary['disease_symptom_relations'] = ds_count or 0
+
+            dm_count, dm_diseases, dm_medicines = conn.execute('''
+                SELECT COUNT(*), COUNT(DISTINCT disease_id), COUNT(DISTINCT medicine_id)
+                FROM disease_medicine_relations
+                WHERE user_id = ?
+            ''', (user_id,)).fetchone()
+            summary['disease_medicine_relations'] = dm_count or 0
+
+            summary['unique_diseases'] = max(ds_diseases or 0, dm_diseases or 0)
+            summary['unique_symptoms'] = ds_symptoms or 0
+            summary['unique_medicines'] = dm_medicines or 0
+
+            sources = conn.execute('''
+                SELECT DISTINCT source FROM (
+                    SELECT source FROM disease_symptom_relations WHERE user_id = ?
+                    UNION
+                    SELECT source FROM disease_medicine_relations WHERE user_id = ?
+                )
+            ''', (user_id, user_id)).fetchall()
+            summary['data_sources'] = [row['source'] for row in sources]
+
         return summary
 
     def remove_diabetes_related_graph_data(self, user_id: str = None) -> Dict[str, Any]:
         """删除图谱中关于糖尿病的全部数据"""
-        diabetes_keywords = ['糖尿病', '血糖', '胰岛素', '糖尿病风险', 'diabetes']
-        
         removal_result = {
             "success": False,
             "removed_diseases": 0,
@@ -547,71 +548,62 @@ class MedicalGraphManager:
             "removed_disease_medicine_relations": 0,
             "errors": []
         }
-        
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # 1. 删除糖尿病相关的疾病-症状关系
-            ds_delete_query = """
-                DELETE FROM disease_symptom_relations 
-                WHERE (disease_id IN (
-                    SELECT id FROM diseases WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%diabetes%'
-                ) OR symptom_id IN (
-                    SELECT id FROM symptoms WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%胰岛素%'
-                ))
-            """
-            
-            if user_id:
-                ds_delete_query += " AND user_id = ?"
-                cursor.execute(ds_delete_query, (user_id,))
-            else:
-                cursor.execute(ds_delete_query)
-            
-            removal_result["removed_disease_symptom_relations"] = cursor.rowcount
-            
-            # 2. 删除糖尿病相关的疾病-药品关系
-            dm_delete_query = """
-                DELETE FROM disease_medicine_relations 
-                WHERE (disease_id IN (
-                    SELECT id FROM diseases WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%diabetes%'
-                ) OR medicine_id IN (
-                    SELECT id FROM medicines WHERE name LIKE '%胰岛素%' OR name LIKE '%二甲双胍%' OR name LIKE '%insulin%'
-                ))
-            """
-            
-            if user_id:
-                dm_delete_query += " AND user_id = ?"
-                cursor.execute(dm_delete_query, (user_id,))
-            else:
-                cursor.execute(dm_delete_query)
-                
-            removal_result["removed_disease_medicine_relations"] = cursor.rowcount
-            
-            # 3. 删除糖尿病相关的疾病实体
-            disease_delete_query = "DELETE FROM diseases WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%diabetes%'"
-            cursor.execute(disease_delete_query)
-            removal_result["removed_diseases"] = cursor.rowcount
-            
-            # 4. 删除糖尿病相关的症状实体（谨慎删除，只删除明确的糖尿病症状）
-            symptom_delete_query = "DELETE FROM symptoms WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖异常%'"
-            cursor.execute(symptom_delete_query)
-            removal_result["removed_symptoms"] = cursor.rowcount
-            
-            # 5. 删除糖尿病相关的药物实体
-            medicine_delete_query = "DELETE FROM medicines WHERE name LIKE '%胰岛素%' OR name LIKE '%二甲双胍%' OR name LIKE '%insulin%'"
-            cursor.execute(medicine_delete_query)
-            removal_result["removed_medicines"] = cursor.rowcount
-            
-            conn.commit()
-            removal_result["success"] = True
-            
+            with self._connect() as conn:
+                cursor = conn.cursor()
+
+                # 1. 删除糖尿病相关的疾病-症状关系
+                ds_delete_query = """
+                    DELETE FROM disease_symptom_relations
+                    WHERE (disease_id IN (
+                        SELECT id FROM diseases WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%diabetes%'
+                    ) OR symptom_id IN (
+                        SELECT id FROM symptoms WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%胰岛素%'
+                    ))
+                """
+                if user_id:
+                    ds_delete_query += " AND user_id = ?"
+                    cursor.execute(ds_delete_query, (user_id,))
+                else:
+                    cursor.execute(ds_delete_query)
+                removal_result["removed_disease_symptom_relations"] = cursor.rowcount
+
+                # 2. 删除糖尿病相关的疾病-药品关系
+                dm_delete_query = """
+                    DELETE FROM disease_medicine_relations
+                    WHERE (disease_id IN (
+                        SELECT id FROM diseases WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%diabetes%'
+                    ) OR medicine_id IN (
+                        SELECT id FROM medicines WHERE name LIKE '%胰岛素%' OR name LIKE '%二甲双胍%' OR name LIKE '%insulin%'
+                    ))
+                """
+                if user_id:
+                    dm_delete_query += " AND user_id = ?"
+                    cursor.execute(dm_delete_query, (user_id,))
+                else:
+                    cursor.execute(dm_delete_query)
+                removal_result["removed_disease_medicine_relations"] = cursor.rowcount
+
+                # 3. 删除糖尿病相关的疾病实体
+                disease_delete_query = "DELETE FROM diseases WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%diabetes%'"
+                cursor.execute(disease_delete_query)
+                removal_result["removed_diseases"] = cursor.rowcount
+
+                # 4. 删除糖尿病相关的症状实体（谨慎删除，只删除明确的糖尿病症状）
+                symptom_delete_query = "DELETE FROM symptoms WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖异常%'"
+                cursor.execute(symptom_delete_query)
+                removal_result["removed_symptoms"] = cursor.rowcount
+
+                # 5. 删除糖尿病相关的药物实体
+                medicine_delete_query = "DELETE FROM medicines WHERE name LIKE '%胰岛素%' OR name LIKE '%二甲双胍%' OR name LIKE '%insulin%'"
+                cursor.execute(medicine_delete_query)
+                removal_result["removed_medicines"] = cursor.rowcount
+
+                removal_result["success"] = True
+
         except Exception as e:
             removal_result["errors"].append(str(e))
             print(f"删除图谱糖尿病数据失败: {e}")
-        finally:
-            conn.close()
-        
         return removal_result
     
     def get_diabetes_related_data(self, user_id: str = None) -> Dict[str, Any]:
@@ -625,78 +617,52 @@ class MedicalGraphManager:
         }
         
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # 查找糖尿病相关疾病
-            cursor.execute("""
-                SELECT * FROM diseases 
-                WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%diabetes%'
-            """)
-            diseases = cursor.fetchall()
-            columns = [description[0] for description in cursor.description]
-            diabetes_data["diseases"] = [dict(zip(columns, row)) for row in diseases]
-            
-            # 查找糖尿病相关症状
-            cursor.execute("""
-                SELECT * FROM symptoms 
-                WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%'
-            """)
-            symptoms = cursor.fetchall()
-            columns = [description[0] for description in cursor.description]
-            diabetes_data["symptoms"] = [dict(zip(columns, row)) for row in symptoms]
-            
-            # 查找糖尿病相关药物
-            cursor.execute("""
-                SELECT * FROM medicines 
-                WHERE name LIKE '%胰岛素%' OR name LIKE '%二甲双胍%' OR name LIKE '%insulin%'
-            """)
-            medicines = cursor.fetchall()
-            columns = [description[0] for description in cursor.description]
-            diabetes_data["medicines"] = [dict(zip(columns, row)) for row in medicines]
-            
-            # 查找糖尿病相关的疾病-症状关系
-            query = """
-                SELECT dsr.*, d.name as disease_name, s.name as symptom_name
-                FROM disease_symptom_relations dsr
-                JOIN diseases d ON dsr.disease_id = d.id
-                JOIN symptoms s ON dsr.symptom_id = s.id
-                WHERE (d.name LIKE '%糖尿病%' OR d.name LIKE '%血糖%' OR d.name LIKE '%diabetes%'
-                       OR s.name LIKE '%糖尿病%' OR s.name LIKE '%血糖%')
-            """
-            
-            if user_id:
-                query += " AND dsr.user_id = ?"
-                cursor.execute(query, (user_id,))
-            else:
-                cursor.execute(query)
-                
-            relations = cursor.fetchall()
-            columns = [description[0] for description in cursor.description]
-            diabetes_data["disease_symptom_relations"] = [dict(zip(columns, row)) for row in relations]
-            
-            # 查找糖尿病相关的疾病-药品关系
-            query = """
-                SELECT dmr.*, d.name as disease_name, m.name as medicine_name
-                FROM disease_medicine_relations dmr
-                JOIN diseases d ON dmr.disease_id = d.id
-                JOIN medicines m ON dmr.medicine_id = m.id
-                WHERE (d.name LIKE '%糖尿病%' OR d.name LIKE '%血糖%' OR d.name LIKE '%diabetes%'
-                       OR m.name LIKE '%胰岛素%' OR m.name LIKE '%二甲双胍%' OR m.name LIKE '%insulin%')
-            """
-            
-            if user_id:
-                query += " AND dmr.user_id = ?"
-                cursor.execute(query, (user_id,))
-            else:
-                cursor.execute(query)
-                
-            relations = cursor.fetchall()
-            columns = [description[0] for description in cursor.description]
-            diabetes_data["disease_medicine_relations"] = [dict(zip(columns, row)) for row in relations]
-            
-            conn.close()
-            
+            with self._connect() as conn:
+                diabetes_data["diseases"] = [dict(row) for row in conn.execute("""
+                    SELECT * FROM diseases
+                    WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%' OR name LIKE '%diabetes%'
+                """)]
+
+                diabetes_data["symptoms"] = [dict(row) for row in conn.execute("""
+                    SELECT * FROM symptoms
+                    WHERE name LIKE '%糖尿病%' OR name LIKE '%血糖%'
+                """)]
+
+                diabetes_data["medicines"] = [dict(row) for row in conn.execute("""
+                    SELECT * FROM medicines
+                    WHERE name LIKE '%胰岛素%' OR name LIKE '%二甲双胍%' OR name LIKE '%insulin%'
+                """)]
+
+                ds_query = """
+                    SELECT dsr.*, d.name as disease_name, s.name as symptom_name
+                    FROM disease_symptom_relations dsr
+                    JOIN diseases d ON dsr.disease_id = d.id
+                    JOIN symptoms s ON dsr.symptom_id = s.id
+                    WHERE (d.name LIKE '%糖尿病%' OR d.name LIKE '%血糖%' OR d.name LIKE '%diabetes%'
+                           OR s.name LIKE '%糖尿病%' OR s.name LIKE '%血糖%')
+                """
+                dm_query = """
+                    SELECT dmr.*, d.name as disease_name, m.name as medicine_name
+                    FROM disease_medicine_relations dmr
+                    JOIN diseases d ON dmr.disease_id = d.id
+                    JOIN medicines m ON dmr.medicine_id = m.id
+                    WHERE (d.name LIKE '%糖尿病%' OR d.name LIKE '%血糖%' OR d.name LIKE '%diabetes%'
+                           OR m.name LIKE '%胰岛素%' OR m.name LIKE '%二甲双胍%' OR m.name LIKE '%insulin%')
+                """
+
+                if user_id:
+                    ds_cursor = conn.execute(ds_query + " AND dsr.user_id = ?", (user_id,))
+                    dm_cursor = conn.execute(dm_query + " AND dmr.user_id = ?", (user_id,))
+                else:
+                    ds_cursor = conn.execute(ds_query)
+                    dm_cursor = conn.execute(dm_query)
+
+                diabetes_data["disease_symptom_relations"] = [dict(row) for row in ds_cursor.fetchall()]
+                diabetes_data["disease_medicine_relations"] = [dict(row) for row in dm_cursor.fetchall()]
+                for record in diabetes_data["disease_medicine_relations"]:
+                    record['side_effects'] = self._deserialize_optional_json(record.get('side_effects'))
+                    record['contraindications'] = self._deserialize_optional_json(record.get('contraindications'))
+
         except Exception as e:
             print(f"获取糖尿病相关数据失败: {e}")
         
